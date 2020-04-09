@@ -8,7 +8,6 @@
 import pyglet
 import shapes
 
-
 class Component(object):
     def __init__(self, shape, color, draw_type):
         self.shape = shape

@@ -9,6 +9,18 @@ import math
 import vector
 import line
 
+# Note about Simple_polygon class:
+#   Points should be defined by angles in order going counter-clockwise around 
+#   the center of rotation (pos). Widths define the distance to each point from
+#   pos. Angles and widths are co-indexed, so angles[i] corresponds to widths[i]
+#   
+#   If collision detection is an intended use with this, some guidelines
+#   should be followed:
+#       1) Angles should remain under 180 degrees between each other 
+#          (i.e the angle between 2 vectors at a point should not exceed 180
+#           degrees with respect to the main body of the polygon)
+#       2) The polygon should not "double" back on itself or overlap itself
+
 class Simple_polygon(object):
     def __init__(self, pos, angles, widths, radians = True):
         self.pos = pos #pos defines the center of rotation of the polygon

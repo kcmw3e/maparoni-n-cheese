@@ -8,13 +8,16 @@
 import pyglet
 
 class App(pyglet.window.Window):
-    def __init__(self):
+    def __init__(self, width = 640, height = 480):
         config = pyglet.gl.Config(sample_buffers=1, samples=8, double_buffer = True) #gets rid of anti-aliasing
-        super(App, self).__init__(config = config, resizable = True)
+        super(App, self).__init__(config = config, resizable = True, width = width, height = height)
         self.cursor_pos = tuple()
         self.moved_pos = tuple()
         self.previous_pos = tuple()
 
+
+    def on_enter(self):
+        pass
 
     def on_key_press(self, symbol, modifiers):
         pass

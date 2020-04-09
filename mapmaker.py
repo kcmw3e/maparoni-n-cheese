@@ -10,11 +10,12 @@ import app
 import tree
 import mountain
 import shapes
+import layer
 
 class Map_maker(app.App):
-    def __init__(self):
-        super().__init__()
-        self.layer = list()
+    def __init__(self, width, height):
+        super().__init__(width, height)
+        self.layer = layer.Layer(width, height)
 
     def on_key_press(self, symbol, modifiers):
         pass
@@ -37,27 +38,16 @@ class Map_maker(app.App):
 
     def on_draw(self):
         super().on_draw()
-        for t in self.layer:
-            t.draw()
         self.tree.draw()
+        self.layer.draw()
 
     def add_tree(self, tree_type):
         if tree_type == "Oak":
             #t = tree.Tree(self.cursor_pos, 30, 40, [45, 112, 3], [112, 52, 3], 1)
             t = mountain.Mountain(self.cursor_pos, 80, 50, [112, 112, 112], True, [255, 255, 255])
-            for other in self.layer:
-                if is_near(other, t, 50): #*
-                    if t.intersects(other):
-                        return False
-            self.layer.append(t)
-
-def is_near(a, b, near): #*
-    p1 = a.pos
-    p2 = b.pos
-    if abs(p1[0] - p2[0]) < near or abs(p1[1] - p2[1]) < near:
-        return True
+            self.layer.add_if_not_intersecting(t)
 
 
-map_maker = Map_maker()
-
+map_maker = Map_maker(1200, 740)
+map_maker.set_caption("Map Maker")
 pyglet.app.run()
