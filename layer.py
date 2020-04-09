@@ -33,7 +33,7 @@ class Layer(object):
     def add(self, thing):
         for row in self.regions:
             for region in row:
-                if region.object_in_region:
+                if region.object_in_region(thing):
                     region.add(thing)
 
     def add_if_not_intersecting(self, thing):
@@ -58,7 +58,7 @@ class Region(object):
         self.height = height
         self.objects = list()
         self.shape = shapes.Rect(self.pos, self.width, self.height)
-        self.vertex_list = pyglet.graphics.vertex_list(4, ("v2f", self.shape.flattened_points), ("c3B", [100, 100, 100] * 4))
+        self.vertex_list = pyglet.graphics.vertex_list(4, ("v2f", self.shape.flattened_points), ("c3B", [100, 100, 100] * 4)) #*
 
     def __repr__(self):
         return f"Region ({self.width, self.height}) at {self.pos}"

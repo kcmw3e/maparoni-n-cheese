@@ -16,6 +16,8 @@ class Map_maker(app.App):
     def __init__(self, width, height):
         super().__init__(width, height)
         self.layer = layer.Layer(width, height)
+        pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
+        pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
 
     def on_key_press(self, symbol, modifiers):
         pass
@@ -29,22 +31,24 @@ class Map_maker(app.App):
 
     def on_mouse_motion(self, x, y, dx, dy):
         super().on_mouse_motion(x, y, dx, dy)
-        #self.tree = tree.Tree(self.cursor_pos, 30, 40, [45, 112, 3], [112, 52, 3], 1)
-        self.tree = mountain.Mountain(self.cursor_pos, 80, 50, [112, 112, 112], True, [255, 255, 255])
+        self.tree = tree.Tree(self.cursor_pos, 10, 20, [45, 112, 3, 112], [112, 52, 3, 112], 1)
+        #self.tree = mountain.Mountain(self.cursor_pos, 80, 50, [112, 112, 112, 112], True, [255, 255, 255, 112])
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         super().on_mouse_drag(x, y, dx, dy, buttons, modifiers)
+        self.tree = tree.Tree(self.cursor_pos, 10, 20, [45, 112, 3, 112], [112, 52, 3, 112], 1)
+        #self.tree = mountain.Mountain(self.cursor_pos, 80, 50, [112, 112, 112, 112], True, [255, 255, 255, 112])
         self.add_tree("Oak")
 
     def on_draw(self):
         super().on_draw()
-        self.tree.draw()
         self.layer.draw()
+        self.tree.draw()
 
     def add_tree(self, tree_type):
         if tree_type == "Oak":
-            #t = tree.Tree(self.cursor_pos, 30, 40, [45, 112, 3], [112, 52, 3], 1)
-            t = mountain.Mountain(self.cursor_pos, 80, 50, [112, 112, 112], True, [255, 255, 255])
+            t = tree.Tree(self.cursor_pos, 10, 20, [45, 112, 3], [112, 52, 3], 1)
+            #t = mountain.Mountain(self.cursor_pos, 80, 50, [112, 112, 112], True, [255, 255, 255])
             self.layer.add_if_not_intersecting(t)
 
 

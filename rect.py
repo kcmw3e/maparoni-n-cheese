@@ -25,35 +25,35 @@ class Rect(polygon.Simple_polygon):
 
     def generate_angles(self):
         self.angles = list()
-        dx = self.offset[0] + self.width / 2
+        dx = self.offset[0] + self.width  / 2
         dy = self.offset[1] + self.height / 2
         angle0 = math.atan2(dy, dx)
-        dx = self.offset[0] - self.width / 2
+        dx = self.offset[0] - self.width  / 2
         dy = self.offset[1] + self.height / 2
         angle1 = math.atan2(dy, dx)
-        dx = self.offset[0] - self.width / 2
+        dx = self.offset[0] - self.width  / 2
         dy = self.offset[1] - self.height / 2
         angle2 = math.atan2(dy, dx)
-        dx = self.offset[0] + self.width / 2
+        dx = self.offset[0] + self.width  / 2
         dy = self.offset[1] - self.height / 2
         angle3 = math.atan2(dy, dx)
         self.angles.extend([angle0, angle1, angle2, angle3])
 
     def generate_widths(self):
         self.widths = list()
-        dx = self.offset[0] + self.width / 2 + self.pos[0]
+        dx = self.offset[0] + self.width  / 2 + self.pos[0]
         dy = self.offset[1] + self.height / 2 + self.pos[1]
         pos = (dx, dy)
         width0 = line.Line.point_to_point(self.pos, pos)
-        dx = self.offset[0] - self.width / 2 + self.pos[0]
+        dx = self.offset[0] - self.width  / 2 + self.pos[0]
         dy = self.offset[1] + self.height / 2 + self.pos[1]
         pos = (dx, dy)
         width1 = line.Line.point_to_point(self.pos, pos)
-        dx = self.offset[0] - self.width / 2 + self.pos[0]
+        dx = self.offset[0] - self.width  / 2 + self.pos[0]
         dy = self.offset[1] - self.height / 2 + self.pos[1]
         pos = (dx, dy)
         width2 = line.Line.point_to_point(self.pos, pos)
-        dx = self.offset[0] + self.width / 2 + self.pos[0]
+        dx = self.offset[0] + self.width  / 2 + self.pos[0]
         dy = self.offset[1] - self.height / 2 + self.pos[1]
         pos = (dx, dy)
         width3 = line.Line.point_to_point(self.pos, pos)
