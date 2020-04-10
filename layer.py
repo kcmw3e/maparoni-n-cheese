@@ -50,6 +50,16 @@ class Layer(object):
             for region in row:
                 region.draw()
 
+    def update(self, width, height):
+        old_regions = self.regions
+        self.height = height
+        self.width = width
+        self.generate_regions()
+        for row in old_regions:
+            for region in row:
+                for obj in region.objects:
+                    self.add_if_not_intersecting(obj)
+
 
 class Region(object):
     def __init__(self, pos, width, height):
