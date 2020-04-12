@@ -31,7 +31,7 @@ class Map_maker(app.App):
         self.set_mouse_visible(False)
         self.cursor_pic = None
 
-        self.background_color = [255, 255, 255]
+        self.background_color = [30, 30, 30]
         self.background_rect = shapes.Rect((self.width / 2, self.height / 2), self.width, self.height)
         self.background = component.Component(self.background_rect, self.background_color, pyglet.gl.GL_POLYGON)
 
@@ -64,7 +64,6 @@ class Map_maker(app.App):
         self.cursor_pic.draw()
         
         self.fps_display.draw()
-        
 
     def on_resize(self, width, height):
         super().on_resize(width, height)

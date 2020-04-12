@@ -44,7 +44,3 @@ class Mountain(object):
                 if component.intersects(other_component):
                     return True
         return False
-
-    def draw(self):
-        for component in self.components:
-            component.vertex_list.draw(component.draw_type)

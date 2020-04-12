@@ -28,6 +28,7 @@ class Simple_polygon(object):
         self.angles = tuple(angles) #contains the angles to generate points
         self.widths = tuple(widths) #contains the distances to each point
         self.generate_points()
+        self.generate_trianglular_points()
         self.generate_perimeter_vectors()
 
     def generate_points(self):
@@ -44,6 +45,14 @@ class Simple_polygon(object):
             point = (x, y)
             self.points.append(point)
             self.flattened_points.extend([x, y])
+
+    def generate_trianglular_points(self):
+        self.triangular_points = list()
+        (x0, y0) = self.points[0]
+        for i in range(1, len(self.points)-1):
+            (x1, y1) = self.points[i]
+            (x2, y2) = self.points[i+1]
+            self.triangular_points.extend([x0, y0, x1, y1, x2, y2])
 
     def generate_perimeter_vectors(self): #generate the vectors from point to point around the perimeter
         vectors = list()

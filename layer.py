@@ -63,6 +63,7 @@ class Layer(object):
 
 class Region(object):
     def __init__(self, pos, width, height):
+        self.batch = pyglet.graphics.Batch()#
         self.pos = pos
         self.width = width
         self.height = height
@@ -76,16 +77,18 @@ class Region(object):
     def add(self, thing):
         self.objects.append(thing)
 
-    def draw(self):
-        self.vertex_list.draw(pyglet.gl.GL_LINE_LOOP)
-        for obj in self.objects:
-            obj.draw()
-
+        for co in thing.components:
+            self.batch.add(co.number_of_points, pyglet.gl.GL_TRIANGLES, None, co.vertices, co.vertices_colors)
+ 
     def object_in_region(self, thing):
         for component in thing.components:
             if component.intersects(self):
                 return True
         return False
+
+    def draw(self):
+        self.vertex_list.draw(pyglet.gl.GL_LINE_LOOP)
+        self.batch.draw()
 
     def objects_in_region_intersect(self, thing):
         for obj in self.objects:
