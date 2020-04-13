@@ -13,6 +13,8 @@ import shapes
 import layer
 import copy
 import component
+import random
+from pyglet.window import key
 
 class Map_maker(app.App):
     def __init__(self, width, height):
@@ -35,12 +37,18 @@ class Map_maker(app.App):
         self.background_rect = shapes.Rect((self.width / 2, self.height / 2), self.width, self.height)
         self.background = component.Component(self.background_rect, self.background_color, pyglet.gl.GL_POLYGON)
 
+        self.keys = dict()
+        self.keys[key.A] = False
+
         self.fps_display = pyglet.window.FPSDisplay(self)
-    
-    
+
     def on_key_press(self, symbol, modifiers):
-        if symbol == pyglet.window.key.K_A:
-            print('a')
+        if symbol == key.A:
+            self.keys[symbol] = True
+
+    def on_key_release(self, symbol, modifiers):
+        if symbol == key.A:
+            self.keys[symbol] = False
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         super().on_mouse_scroll(x, y, scroll_x, scroll_y)
@@ -55,6 +63,8 @@ class Map_maker(app.App):
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         super().on_mouse_drag(x, y, dx, dy, buttons, modifiers)
+        self.cursor_pic = self.make_map_object(self.cursor_pos, "Tree", "Oak", True, 112)
+
         self.layer.add_if_not_intersecting(self.make_map_object(self.cursor_pos, "Tree", "Oak"))
 
     def on_draw(self):
@@ -64,6 +74,13 @@ class Map_maker(app.App):
         self.cursor_pic.draw()
         
         self.fps_display.draw()
+
+        if self.keys[key.A]:
+            x = random.randint(0, self.width)
+            y = random.randint(0, self.height)
+            pos = (x, y)
+            t = self.make_map_object(pos, "Tree", "Oak")
+            self.layer.add_if_not_intersecting(t)
 
     def on_resize(self, width, height):
         super().on_resize(width, height)

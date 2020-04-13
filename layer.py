@@ -30,19 +30,19 @@ class Layer(object):
         regions_col = x // self.region_width
         return self.regions[regions_row][regions_col]
 
-    def add(self, thing):
+    def add(self, map_object):
         for row in self.regions:
             for region in row:
-                if region.object_in_region(thing):
-                    region.add(thing)
+                if region.object_in_region(map_object):
+                    region.add(map_object)
 
-    def add_if_not_intersecting(self, thing):
+    def add_if_not_intersecting(self, map_object):
         for row in self.regions:
             for region in row:
-                if region.object_in_region(thing):
-                    if region.objects_in_region_intersect(thing):
+                if region.object_in_region(map_object):
+                    if region.objects_in_region_intersect(map_object):
                         return False
-        self.add(thing)
+        self.add(map_object)
         return True
 
     def draw(self):
@@ -55,11 +55,9 @@ class Layer(object):
         self.height = height
         self.width = width
         self.generate_regions()
-        for row in old_regions:
-            for region in row:
-                for obj in region.objects:
-                    self.add_if_not_intersecting(obj)
-
+        for row in range(len(old_regions)):
+            for col in range(len(old_regions[row])):
+                self.regions[row][col] = old_regions[row][col]
 
 class Region(object):
     def __init__(self, pos, width, height):
@@ -67,21 +65,21 @@ class Region(object):
         self.pos = pos
         self.width = width
         self.height = height
-        self.objects = list()
+        self.objects = set()
         self.shape = shapes.Rect(self.pos, self.width, self.height)
         self.vertex_list = pyglet.graphics.vertex_list(4, ("v2f", self.shape.flattened_points), ("c3B", [100, 100, 100] * 4)) #*
 
     def __repr__(self):
         return f"Region ({self.width, self.height}) at {self.pos}"
 
-    def add(self, thing):
-        self.objects.append(thing)
+    def add(self, map_object):
+        self.objects.add(map_object)
 
-        for co in thing.components:
+        for co in map_object.components:
             self.batch.add(co.number_of_points, pyglet.gl.GL_TRIANGLES, None, co.vertices, co.vertices_colors)
  
-    def object_in_region(self, thing):
-        for component in thing.components:
+    def object_in_region(self, map_object):
+        for component in map_object.components:
             if component.intersects(self):
                 return True
         return False
@@ -90,8 +88,8 @@ class Region(object):
         self.vertex_list.draw(pyglet.gl.GL_LINE_LOOP)
         self.batch.draw()
 
-    def objects_in_region_intersect(self, thing):
+    def objects_in_region_intersect(self, map_object):
         for obj in self.objects:
-            if obj.intersects(thing):
+            if obj.intersects(map_object):
                 return True
         return False
