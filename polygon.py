@@ -9,6 +9,18 @@ import math
 import vector
 import line
 
+# Note about Simple_polygon class:
+#   Points should be defined by angles in order going counter-clockwise around 
+#   the center of rotation (pos). Widths define the distance to each point from
+#   pos. Angles and widths are co-indexed, so angles[i] corresponds to widths[i]
+#   
+#   If collision detection is an intended use with this, some guidelines
+#   should be followed:
+#       1) Angles should remain under 180 degrees between each other 
+#          (i.e the angle between 2 vectors at a point should not exceed 180
+#           degrees with respect to the main body of the polygon)
+#       2) The polygon should not "double" back on itself or overlap itself
+
 class Simple_polygon(object):
     def __init__(self, pos, angles, widths, radians = True):
         self.pos = pos #pos defines the center of rotation of the polygon
@@ -16,6 +28,7 @@ class Simple_polygon(object):
         self.angles = tuple(angles) #contains the angles to generate points
         self.widths = tuple(widths) #contains the distances to each point
         self.generate_points()
+        self.generate_trianglular_points()
         self.generate_perimeter_vectors()
 
     def generate_points(self):
@@ -32,6 +45,14 @@ class Simple_polygon(object):
             point = (x, y)
             self.points.append(point)
             self.flattened_points.extend([x, y])
+
+    def generate_trianglular_points(self):
+        self.triangular_points = list()
+        (x0, y0) = self.points[0]
+        for i in range(1, len(self.points)-1):
+            (x1, y1) = self.points[i]
+            (x2, y2) = self.points[i+1]
+            self.triangular_points.extend([x0, y0, x1, y1, x2, y2])
 
     def generate_perimeter_vectors(self): #generate the vectors from point to point around the perimeter
         vectors = list()
@@ -68,7 +89,7 @@ class Simple_polygon(object):
                 if not v.contains_point(point):
                     return False
         return True
-    
+
     def intersection(self, line):
         intersections = set()
         for vector in self.vectors:

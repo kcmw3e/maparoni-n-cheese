@@ -44,13 +44,3 @@ class Mountain(object):
                 if component.intersects(other_component):
                     return True
         return False
-
-    def draw(self):
-        for component in self.components:
-            component.vertex_list.draw(component.draw_type)
-
-
-
-l = shapes.Line((0, 1), 0)
-p = shapes.Simple_polygon((0, 0), [0, math.pi / 2, math.pi], [5, 10, 5])
-print(p.intersection(l))
