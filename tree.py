@@ -43,22 +43,19 @@ class Tree(object):
         r = shapes.Rect((x, y), trunk_width, trunk_height)
         self.trunk = component.Component(r, self.trunk_color, pyglet.gl.GL_POLYGON)
 
+    def intersects(self, other):
+        if self.is_near(other):
+            for component in self.components:
+                for other_component in other.components:
+                    if component.intersects(other_component):
+                        return True
+            return False
+
     def is_near(self, other):
-        x_max = (self.width + other.width) * .5 #for padding of inaccuracy
-        y_max = (self.height + other.height) * .5
-        dx = abs(self.pos[0] - other.pos[0])
-        dy = abs(self.pos[1] - other.pos[1])
-        if dx <= x_max and dy <= y_max:
+        if abs(self.pos[0] - other.pos[0]) <= max(self.width, other.width) and abs(self.pos[1] - other.pos[1]) <= max(self.height, other.height):
             return True
         else:
             return False
-
-    def intersects(self, other):
-        for component in self.components:
-            for other_component in other.components:
-                if component.intersects(other_component):
-                    return True
-        return False
 
     def draw(self):
         for component in self.components:

@@ -55,27 +55,25 @@ class Layer(object):
         self.height = height
         self.width = width
         self.generate_regions()
-        for row in old_regions:
-            for region in row:
-                for obj in region.objects:
-                    self.add_if_not_intersecting(obj)
+        for row in range(len(old_regions)):
+            for col in range(len(old_regions[row])):
+                self.regions[row][col] = old_regions[row][col]
 
 class Region(object):
     def __init__(self, pos, width, height):
-        self.batch = pyglet.graphics.Batch()#
+        self.batch = pyglet.graphics.Batch()
         self.pos = pos
         self.width = width
         self.height = height
-        self.objects = list()
+        self.objects = set()
         self.shape = shapes.Rect(self.pos, self.width, self.height)
-        self.vertex_list = pyglet.graphics.vertex_list(4, ("v2f", self.shape.flattened_points), ("c3B", [100, 100, 100] * 4)) #*
+        self.vertex_list = pyglet.graphics.vertex_list(4, ("v2f", self.shape.flattened_points), ("c3B", [100, 100, 100] * 4))
 
     def __repr__(self):
         return f"Region ({self.width, self.height}) at {self.pos}"
 
     def add(self, map_object):
-        self.objects.append(map_object)
-
+        self.objects.add(map_object)
         for co in map_object.components:
             self.batch.add(co.number_of_points, pyglet.gl.GL_TRIANGLES, None, co.vertices, co.vertices_colors)
  
@@ -91,7 +89,6 @@ class Region(object):
 
     def objects_in_region_intersect(self, map_object):
         for obj in self.objects:
-            if obj.is_near(map_object):
-                if obj.intersects(map_object):
-                    return True
+            if obj.intersects(map_object):
+                return True
         return False
