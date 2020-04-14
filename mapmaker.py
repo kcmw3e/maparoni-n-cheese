@@ -15,6 +15,7 @@ import copy
 import component
 import random
 from pyglet.window import key
+import gui
 
 class Map_maker(app.App):
     def __init__(self, width, height):
@@ -39,6 +40,12 @@ class Map_maker(app.App):
 
         self.keys = dict()
         self.keys[key.A] = False
+
+
+        self.gui_width = 300
+        self.gui_height = self.height
+        self.gui_color = [220, 112, 50]
+        self.gui = gui.GUI((self.width - self.gui_width / 2, self.height / 2), self.gui_width, self.gui_height, self.gui_color)
 
         self.fps_display = pyglet.window.FPSDisplay(self)
 
@@ -74,6 +81,8 @@ class Map_maker(app.App):
         self.cursor_pic.draw()
         
         self.fps_display.draw()
+
+        self.gui.draw()
 
         if self.keys[key.A]:
             x = random.randint(0, self.width)
