@@ -10,7 +10,7 @@ import math
 import line
 
 class Rect(polygon.Simple_polygon):
-    #pos is the center of rotation, if offset left (0, 0) rotation is about center of rect
+    #pos is the center of rotation, if left (0, 0) rotation is about upper-left corner
     #offset is the offset from pos (dx, dy)
     def __init__(self, pos, width, height, offset = (0, 0), radians = True, rotation = 0):
         self.pos = pos
