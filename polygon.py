@@ -22,14 +22,17 @@ import line
 #       2) The polygon should not "double" back on itself or overlap itself
 
 class Simple_polygon(object):
-    def __init__(self, pos, angles, widths, radians = True):
+    def __init__(self, pos, angles, widths, radians = True, rotation = 0):
         self.pos = pos #pos defines the center of rotation of the polygon
         self.radians = radians
         self.angles = tuple(angles) #contains the angles to generate points
         self.widths = tuple(widths) #contains the distances to each point
+        self.radians = radians
+        self.rotation = rotation
         self.generate_points()
         self.generate_trianglular_points()
         self.generate_perimeter_vectors()
+        self.rotate(self.rotation)
 
     def generate_points(self):
         self.points = list()
@@ -97,3 +100,12 @@ class Simple_polygon(object):
             if intersection != None:
                 intersections.add(intersection)
         return intersections
+
+    def rotate(self, dangle):
+        rotated_angles = list()
+        for angle in self.angles:
+            rotated_angles.append(angle+dangle)
+        self.angles = tuple(rotated_angles)
+        self.generate_points()
+        self.generate_trianglular_points()
+        self.generate_perimeter_vectors()

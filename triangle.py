@@ -19,10 +19,10 @@ class Iso_triangle(polygon.Simple_polygon):
         self.height = height
         self.offset = offset
         self.radians = radians
-        self.rotation = rotation
+        self.rotation = rotation if radians else math.radians(rotation)
         self.generate_angles()
         self.generate_widths()
-        super().__init__(self.pos, self.angles, self.widths, radians)
+        super().__init__(self.pos, self.angles, self.widths, self.radians, self.rotation)
 
     def generate_angles(self):
         self.angles = list()

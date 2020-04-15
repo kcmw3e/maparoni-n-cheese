@@ -39,8 +39,19 @@ class Mountain(object):
         self.snow = component.Component(t, self.snow_color, pyglet.gl.GL_POLYGON)
 
     def intersects(self, other):
+        if self.is_near(other):
+            for component in self.components:
+                for other_component in other.components:
+                    if component.intersects(other_component):
+                        return True
+            return False
+
+    def is_near(self, other):
+        if abs(self.pos[0] - other.pos[0]) <= max(self.width, other.width) and abs(self.pos[1] - other.pos[1]) <= max(self.height, other.height):
+            return True
+        else:
+            return False
+            
+    def draw(self):
         for component in self.components:
-            for other_component in other.components:
-                if component.intersects(other_component):
-                    return True
-        return False
+            component.vertex_list.draw(component.draw_type)
