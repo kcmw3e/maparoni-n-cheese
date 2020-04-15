@@ -64,7 +64,6 @@ class Map_maker(app.App):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         super().on_mouse_drag(x, y, dx, dy, buttons, modifiers)
         self.cursor_pic = self.make_map_object(self.cursor_pos, "Tree", "Oak", True, 112)
-
         self.layer.add_if_not_intersecting(self.make_map_object(self.cursor_pos, "Tree", "Oak"))
 
     def on_draw(self):

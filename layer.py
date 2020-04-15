@@ -55,6 +55,7 @@ class Layer(object):
         self.height = height
         self.width = width
         self.generate_regions()
+
         for row in range(len(old_regions)):
             for col in range(len(old_regions[row])):
                 self.regions[row][col] = old_regions[row][col]
@@ -74,6 +75,7 @@ class Region(object):
 
     def add(self, map_object):
         self.objects.add(map_object)
+
         for co in map_object.components:
             self.batch.add(co.number_of_points, pyglet.gl.GL_TRIANGLES, None, co.vertices, co.vertices_colors)
  
