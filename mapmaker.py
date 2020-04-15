@@ -42,10 +42,13 @@ class Map_maker(app.App):
         self.keys[key.A] = False
 
 
-        self.gui_width = 300
-        self.gui_height = self.height
+        self.gui_button_functions = [self.change_cursor]
+        self.gui_button_parameters = [("Tree",)]
+        self.gui_width = self.width
+        self.gui_height = 50
         self.gui_color = [220, 112, 50]
-        self.gui = gui.GUI((self.width - self.gui_width / 2, self.height / 2), self.gui_width, self.gui_height, self.gui_color)
+        self.gui_pos = (self.width / 2, self.height - self.gui_height / 2)
+        self.gui = gui.GUI(self.gui_pos, self.gui_width, self.gui_height, self.gui_color, self.gui_button_functions, self.gui_button_parameters)
 
         self.fps_display = pyglet.window.FPSDisplay(self)
 
@@ -120,8 +123,7 @@ class Map_maker(app.App):
 
     def change_cursor(self, cursor_type):
         if cursor_type == "Tree":
-            pass
-
+            self.set_mouse_visible(True)
 
 map_maker = Map_maker(1280, 720)
 map_maker.set_caption("Map Maker")

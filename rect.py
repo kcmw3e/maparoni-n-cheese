@@ -58,3 +58,4 @@ class Rect(polygon.Simple_polygon):
         pos = (dx, dy)
         width3 = line.Line.point_to_point(self.pos, pos)
         self.widths.extend([width0, width1, width2, width3])
+        

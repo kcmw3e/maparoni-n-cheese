@@ -20,7 +20,6 @@ import line
 #          (i.e the angle between 2 vectors at a point should not exceed 180
 #           degrees with respect to the main body of the polygon)
 #       2) The polygon should not "double" back on itself or overlap itself
-
 class Simple_polygon(object):
     def __init__(self, pos, angles, widths, radians = True, rotation = 0):
         self.pos = pos #pos defines the center of rotation of the polygon
@@ -31,6 +30,7 @@ class Simple_polygon(object):
         self.rotation = rotation
         self.generate_points()
         self.generate_trianglular_points()
+        self.generate_lines_points()
         self.generate_perimeter_vectors()
         self.rotate(self.rotation)
 
@@ -56,6 +56,17 @@ class Simple_polygon(object):
             (x1, y1) = self.points[i]
             (x2, y2) = self.points[i+1]
             self.triangular_points.extend([x0, y0, x1, y1, x2, y2])
+
+    def generate_lines_points(self):
+        self.lines_points = list()
+        for i in range(len(self.points)):
+            if i + 1 < len(self.points):
+                j = i + 1
+            else:
+                j = 0
+            (x1, y1) = self.points[i]
+            (x2, y2) = self.points[j]
+            self.lines_points.extend([x1, y1, x2, y2])
 
     def generate_perimeter_vectors(self): #generate the vectors from point to point around the perimeter
         vectors = list()
