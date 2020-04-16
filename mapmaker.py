@@ -41,15 +41,19 @@ class Map_maker(app.App):
         self.keys = dict()
         self.keys[key.A] = False
 
+        self.mouse_visibility = False
 
-        self.gui_button_functions = [self.change_cursor]
-        self.gui_button_parameters = [("Tree",)]
+        self.gui_button_functions = [self.toggle_cursor_visibility]
+        self.gui_button_parameters = [tuple()]
         self.gui_width = self.width
         self.gui_height = 50
         self.gui_color = [220, 112, 50]
         self.gui_pos = (self.width / 2, self.height - self.gui_height / 2)
         self.gui = gui.GUI(self.gui_pos, self.gui_width, self.gui_height, self.gui_color, self.gui_button_functions, self.gui_button_parameters)
 
+
+        self.clock = pyglet.clock.get_default()
+        self.clock.schedule(self.toggle_cursor_visibility)
         self.fps_display = pyglet.window.FPSDisplay(self)
 
     def on_key_press(self, symbol, modifiers):
@@ -66,6 +70,7 @@ class Map_maker(app.App):
     def on_mouse_press(self, x, y, buttons, modifiers):
         super().on_mouse_press(x, y, buttons, modifiers)
         self.layer.add_if_not_intersecting(self.make_map_object(self.cursor_pos, "Tree", "Oak"))
+        self.gui.buttons[0]()
 
     def on_mouse_motion(self, x, y, dx, dy):
         super().on_mouse_motion(x, y, dx, dy)
@@ -86,13 +91,6 @@ class Map_maker(app.App):
         self.fps_display.draw()
 
         self.gui.draw()
-
-        if self.keys[key.A]:
-            x = random.randint(0, self.width)
-            y = random.randint(0, self.height)
-            pos = (x, y)
-            t = self.make_map_object(pos, "Tree", "Oak")
-            self.layer.add_if_not_intersecting(t)
 
     def on_resize(self, width, height):
         super().on_resize(width, height)
@@ -121,9 +119,13 @@ class Map_maker(app.App):
             obj = mountain.Mountain(pos, 80, 50, rock_color, snow, snow_color)
         return obj
 
-    def change_cursor(self, cursor_type):
+    def toggle_cursor_visibility(self, dt = None):
+        self.mouse_visibility = not self.mouse_visibility
+        self.set_mouse_visible(self.mouse_visibility)
+
+    def change_cursor_type(self, cursor_type):
         if cursor_type == "Tree":
-            self.set_mouse_visible(True)
+            pass
 
 map_maker = Map_maker(1280, 720)
 map_maker.set_caption("Map Maker")
