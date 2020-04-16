@@ -103,7 +103,7 @@ class Simple_polygon(object):
                 if not v.contains_point(point):
                     return False
         return True
-    
+
     def intersection(self, line):
         intersections = set()
         for vector in self.vectors:
