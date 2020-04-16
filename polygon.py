@@ -99,9 +99,11 @@ class Simple_polygon(object):
             vector_to_point = vector.Vector(v.beginning_point, direction_to_point)
             previous_vector = self.vectors[j] #works when i is 0 because of negative indexing
             angle = v.angle_to(vector_to_point)
-            if angle > v.angle_to(previous_vector):
-                if not v.contains_point(point):
-                    return False
+            angle_to_previous = v.angle_to(previous_vector)
+            if angle > angle_to_previous:
+                return False
+            elif angle == angle_to_previous and not v.contains_point(point):
+                return False
         return True
 
     def intersection(self, line):

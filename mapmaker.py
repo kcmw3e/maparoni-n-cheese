@@ -31,8 +31,7 @@ class Map_maker(app.App):
         self.rock_color = [112, 112, 112]
         self.snow_color = [255, 255, 255]
 
-        self.set_mouse_visible(False)
-        self.cursor_pic = None
+
 
         self.background_color = [30, 30, 30]
         self.background_rect = shapes.Rect((self.width / 2, self.height / 2), self.width, self.height)
@@ -41,10 +40,13 @@ class Map_maker(app.App):
         self.keys = dict()
         self.keys[key.A] = False
 
-        self.mouse_visibility = False
+        self.mouse_visibility = True
+        self.cursor_type = None
+        self.cursor_pic = None
+        self.cursor_pos = (0, 0)
 
-        self.gui_button_functions = [self.toggle_cursor_visibility]
-        self.gui_button_parameters = [tuple()]
+        self.gui_button_functions = [self.change_cursor_type, self.change_cursor_type]
+        self.gui_button_parameters = [["Tree", "Oak"], ["Mountain", "Snowy"]]
         self.gui_width = self.width
         self.gui_height = 50
         self.gui_color = [220, 112, 50]
@@ -53,7 +55,7 @@ class Map_maker(app.App):
 
 
         self.clock = pyglet.clock.get_default()
-        self.clock.schedule(self.toggle_cursor_visibility)
+        self.clock.schedule(self.update_cursor)
         self.fps_display = pyglet.window.FPSDisplay(self)
 
     def on_key_press(self, symbol, modifiers):
@@ -70,15 +72,21 @@ class Map_maker(app.App):
     def on_mouse_press(self, x, y, buttons, modifiers):
         super().on_mouse_press(x, y, buttons, modifiers)
         self.layer.add_if_not_intersecting(self.make_map_object(self.cursor_pos, "Tree", "Oak"))
-        self.gui.buttons[0]()
+        if self.gui.hovered:
+            self.gui.cursor_hovered(self.cursor_pos, True)
 
     def on_mouse_motion(self, x, y, dx, dy):
         super().on_mouse_motion(x, y, dx, dy)
-        self.cursor_pic = self.make_map_object(self.cursor_pos, "Tree", "Oak", True, 112)
+        if self.cursor_type != None:
+            self.cursor_pic = self.make_map_object(self.cursor_pos, self.cursor_type, self.cursor_subtype, True, 112)
+        if self.gui.hovered:
+            self.gui.cursor_hovered(self.cursor_pos)
+
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         super().on_mouse_drag(x, y, dx, dy, buttons, modifiers)
-        self.cursor_pic = self.make_map_object(self.cursor_pos, "Tree", "Oak", True, 112)
+        if self.cursor_type != None:
+            self.cursor_pic = self.make_map_object(self.cursor_pos, self.cursor_type, self.cursor_subtype, True, 112)
 
         self.layer.add_if_not_intersecting(self.make_map_object(self.cursor_pos, "Tree", "Oak"))
 
@@ -86,8 +94,9 @@ class Map_maker(app.App):
         super().on_draw()
         self.background.vertex_list.draw(self.background.draw_type)
         self.layer.draw()
-        self.cursor_pic.draw()
-        
+        if self.cursor_type != None and self.cursor_pic != None:
+            self.cursor_pic.draw()
+
         self.fps_display.draw()
 
         self.gui.draw()
@@ -119,13 +128,28 @@ class Map_maker(app.App):
             obj = mountain.Mountain(pos, 80, 50, rock_color, snow, snow_color)
         return obj
 
-    def toggle_cursor_visibility(self, dt = None):
-        self.mouse_visibility = not self.mouse_visibility
+    def toggle_cursor_visibility(self, set_to = None):
+        if set_to != None:
+            self.mouse_visibility = set_to
+        else:
+            self.mouse_visibility = not self.mouse_visibility
         self.set_mouse_visible(self.mouse_visibility)
 
-    def change_cursor_type(self, cursor_type):
-        if cursor_type == "Tree":
-            pass
+    def update_cursor(self, dt):
+        if self.gui.contains_point(self.cursor_pos):
+            self.cursor_pic = None
+            self.toggle_cursor_visibility(True)
+            self.gui.hovered = True
+        else:
+            if self.cursor_type != None:
+                self.toggle_cursor_visibility(False)
+            else:
+                self.toggle_cursor_visibility(True)
+            self.gui.hovered = False
+
+    def change_cursor_type(self, cursor_type, cursor_subtype):
+        self.cursor_type = cursor_type
+        self.cursor_subtype = cursor_subtype
 
 map_maker = Map_maker(1280, 720)
 map_maker.set_caption("Map Maker")
