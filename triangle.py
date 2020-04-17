@@ -51,6 +51,4 @@ class Iso_triangle(polygon.Simple_polygon):
         dy = self.offset[1] - self.height / 2 + self.pos[1]
         point = (dx, dy)
         self.widths.append(line.Line.point_to_point(self.pos, point))
-
-
-        
+      

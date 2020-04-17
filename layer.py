@@ -1,28 +1,44 @@
 import pyglet
 import shapes
+import component
 
 class Layer(object):
-    def __init__(self, width, height, region_width = 300, region_height = 300):
+    def __init__(self, width, height, color, region_width = 300, region_height = 300):
         self.width = width
         self.height = height
+        self.color = color
         self.region_width = region_width
         self.region_height = region_height
+        self.generate_background()
         self.generate_regions()
 
+    def generate_background(self):
+        self.shape = shapes.Rect((self.width / 2, self.height / 2), self.width, self.height)
+        self.background = component.Component(self.shape, self.color, pyglet.gl.GL_POLYGON)
+
     def generate_regions(self):
-        regions_rows = self.height // self.region_height
-        regions_cols = self.width // self.region_width
-        if self.height % self.region_height != 0:
-            regions_rows += 1
-        if self.width % self.region_width != 0:
-            regions_cols += 1
-        self.regions = [["" for _ in range(regions_cols)] for _ in range(regions_rows)]
-        for row in range(regions_rows):
-            for col in range(regions_cols):
-                x = col * self.region_width + self.region_width / 2
-                y = row * self.region_height + self.region_height / 2
-                pos = (x, y)
-                self.regions[row][col] = Region(pos, self.region_width, self.region_height)
+        self.regions = list()
+        total_width = total_height = 0
+        x = y = 0
+        while total_width < self.width:
+            if x + self.region_width <= self.width:
+                width = self.region_width
+            else:
+                width = self.width - total_width
+            while total_height < self.height:
+                if y + self.region_height <= self.height:
+                    height = self.region_height
+                else:
+                    height = self.height - total_height
+                pos = (x + width / 2, y + height / 2)
+                region = Region(pos, width, height)
+                self.regions.append(region)
+                total_height += height
+                y += height
+            total_width += width
+            x += width
+            total_height = 0
+            y = 0
 
     def get_region_at_pos(self, pos):
         (x, y) = pos
@@ -31,34 +47,22 @@ class Layer(object):
         return self.regions[regions_row][regions_col]
 
     def add(self, map_object):
-        for row in self.regions:
-            for region in row:
-                if region.object_in_region(map_object):
-                    region.add(map_object)
+        for region in self.regions:
+            if region.object_in_region(map_object):
+                region.add(map_object)
 
     def add_if_not_intersecting(self, map_object):
-        for row in self.regions:
-            for region in row:
-                if region.object_in_region(map_object):
-                    if region.objects_in_region_intersect(map_object):
-                        return False
+        for region in self.regions:
+            if region.object_in_region(map_object):
+                if region.objects_in_region_intersect(map_object):
+                    return False
         self.add(map_object)
         return True
 
     def draw(self):
-        for row in self.regions:
-            for region in row:
-                region.draw()
-
-    def update(self, width, height):
-        old_regions = self.regions
-        self.height = height
-        self.width = width
-        self.generate_regions()
-
-        for row in range(len(old_regions)):
-            for col in range(len(old_regions[row])):
-                self.regions[row][col] = old_regions[row][col]
+        self.background.vertex_list.draw(self.background.draw_type)
+        for region in self.regions:
+            region.draw()
 
 class Region(object):
     def __init__(self, pos, width, height):
@@ -75,9 +79,8 @@ class Region(object):
 
     def add(self, map_object):
         self.objects.add(map_object)
-
-        for co in map_object.components:
-            self.batch.add(co.number_of_points, pyglet.gl.GL_TRIANGLES, None, co.vertices, co.vertices_colors)
+        for component in map_object.components:
+            self.batch.add(component.number_of_points, pyglet.gl.GL_TRIANGLES, None, component.vertices, component.vertices_colors)
  
     def object_in_region(self, map_object):
         for component in map_object.components:

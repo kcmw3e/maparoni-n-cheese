@@ -16,140 +16,155 @@ import component
 import random
 from pyglet.window import key
 import gui
+import cursor
 
 class Map_maker(app.App):
     def __init__(self, width, height):
         super().__init__(width, height)
-        pyglet.gl.glBlendFunc(pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)
-        pyglet.gl.glEnable(pyglet.gl.GL_BLEND)
+        self.setup()
 
-        self.layer = layer.Layer(width, height)
-
+    def setup(self):
         self.oak_tree_leaf_color = [45, 112, 3]
         self.oak_tree_trunk_color = [112, 52, 3]
-
         self.rock_color = [112, 112, 112]
         self.snow_color = [255, 255, 255]
 
+        self.layer_width = self.width
+        self.layer_height = self.height * .95
+        self.layer_color = [240, 194, 112]
+        self.layer_setup()
+        self.clock_setup()
+        self.cursor_setup()
+        self.gui_setup()
 
+    def layer_setup(self):
+        self.layer = layer.Layer(self.layer_width, self.layer_height, self.layer_color)
 
-        self.background_color = [30, 30, 30]
-        self.background_rect = shapes.Rect((self.width / 2, self.height / 2), self.width, self.height)
-        self.background = component.Component(self.background_rect, self.background_color, pyglet.gl.GL_POLYGON)
+    def cursor_setup(self):
+        self.cursor = cursor.Cursor(None, None)
 
-        self.keys = dict()
-        self.keys[key.A] = False
-
-        self.mouse_visibility = True
-        self.cursor_type = None
-        self.cursor_pic = None
-        self.cursor_pos = (0, 0)
-
-        self.gui_button_functions = [self.change_cursor_type, self.change_cursor_type]
-        self.gui_button_parameters = [["Tree", "Oak"], ["Mountain", "Snowy"]]
+    def gui_setup(self):
+        self.gui_button_functions = [self.change_cursor_type, 
+                                     self.change_cursor_type]
+        self.gui_button_parameters = [ 
+            [
+                self.add_map_obj, 
+                (self.cursor.get_pos, "Tree", "Oak", True),
+                "Map_obj"
+                ],
+            [
+                self.add_map_obj,
+                (self.cursor.get_pos, "Mountain", "Snowy", True),
+                "Map_obj"
+                ] 
+        ]
+        self.gui_button_labels = ["Tree",
+                                  "Mountain"]
+        self.gui_button_colors = [ [112, 194, 255],
+                                   [112, 194, 255] ]
         self.gui_width = self.width
-        self.gui_height = 50
+        self.gui_height = self.height - self.layer_height
         self.gui_color = [220, 112, 50]
         self.gui_pos = (self.width / 2, self.height - self.gui_height / 2)
-        self.gui = gui.GUI(self.gui_pos, self.gui_width, self.gui_height, self.gui_color, self.gui_button_functions, self.gui_button_parameters)
+        self.gui = gui.GUI(self.gui_pos, self.gui_width, self.gui_height,
+                           self.gui_color, self.gui_button_functions,
+                           self.gui_button_parameters, self.gui_button_labels,
+                           self.gui_button_colors)
 
-
+    def clock_setup(self):
         self.clock = pyglet.clock.get_default()
-        self.clock.schedule(self.update_cursor)
-        self.fps_display = pyglet.window.FPSDisplay(self)
+        self.clock.schedule(self.clock_ticked)
 
     def on_key_press(self, symbol, modifiers):
-        if symbol == key.A:
-            self.keys[symbol] = True
+        if symbol == key.ESCAPE:
+            self.gui.show_help_menu(True)
 
     def on_key_release(self, symbol, modifiers):
-        if symbol == key.A:
-            self.keys[symbol] = False
+        if symbol == key.ESCAPE:
+            self.gui.show_help_menu(False)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         super().on_mouse_scroll(x, y, scroll_x, scroll_y)
+        self.cursor.pos = (x, y)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         super().on_mouse_press(x, y, buttons, modifiers)
-        self.layer.add_if_not_intersecting(self.make_map_object(self.cursor_pos, "Tree", "Oak"))
+        self.cursor()
         if self.gui.hovered:
             self.gui.cursor_hovered(self.cursor_pos, True)
 
     def on_mouse_motion(self, x, y, dx, dy):
         super().on_mouse_motion(x, y, dx, dy)
-        if self.cursor_type != None:
-            self.cursor_pic = self.make_map_object(self.cursor_pos, self.cursor_type, self.cursor_subtype, True, 112)
+        self.cursor.pos = (x, y)
         if self.gui.hovered:
-            self.gui.cursor_hovered(self.cursor_pos)
-
+            self.gui.cursor_hovered(self.cursor.pos)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         super().on_mouse_drag(x, y, dx, dy, buttons, modifiers)
-        if self.cursor_type != None:
-            self.cursor_pic = self.make_map_object(self.cursor_pos, self.cursor_type, self.cursor_subtype, True, 112)
-
-        self.layer.add_if_not_intersecting(self.make_map_object(self.cursor_pos, "Tree", "Oak"))
+        self.cursor.pos = (x, y)
+        self.cursor()
 
     def on_draw(self):
         super().on_draw()
-        self.background.vertex_list.draw(self.background.draw_type)
         self.layer.draw()
-        if self.cursor_type != None and self.cursor_pic != None:
-            self.cursor_pic.draw()
-
-        self.fps_display.draw()
-
         self.gui.draw()
+        self.cursor.draw()
 
     def on_resize(self, width, height):
         super().on_resize(width, height)
-        self.layer.update(width, height)
-        self.background_rect = shapes.Rect((self.width / 2, self.height / 2), self.width, self.height)
-        self.background = component.Component(self.background_rect, self.background_color, pyglet.gl.GL_POLYGON)
 
-    def make_map_object(self, pos, object_type, object_subtype = None, alpha = False, alpha_value = None):
-        if object_type == "Tree":
-            if object_subtype == "Oak":
+    def add_map_obj(self, pos, obj_type, obj_subtype, from_cursor = False):
+        obj = self.make_map_obj(pos, obj_type, obj_subtype, from_cursor = from_cursor)
+        self.layer.add_if_not_intersecting(obj)
+
+    def make_map_obj(self, pos, obj_type, obj_subtype, alpha = False, alpha_value = None, from_cursor = False):
+        if from_cursor:
+            pos = pos()
+        if obj_type == "Tree":
+            if obj_subtype == "Oak":
                 leaf_color = copy.copy(self.oak_tree_leaf_color)
                 trunk_color = copy.copy(self.oak_tree_trunk_color)
             if alpha:
                 leaf_color.append(alpha_value)
                 trunk_color.append(alpha_value)
             obj = tree.Tree(pos, 10, 20, leaf_color, trunk_color, 1)
-        elif object_type == "Mountain":
+        elif obj_type == "Mountain":
             rock_color = copy.copy(self.rock_color)
             snow_color = copy.copy(self.snow_color)
             snow = False
-            if object_subtype == "Snowy":
-                if alpha:
-                    rock_color.append(alpha_value)
-                    snow_color.append(alpha_value)
-                    snow = True
-            obj = mountain.Mountain(pos, 80, 50, rock_color, snow, snow_color)
+            if obj_subtype == "Snowy":
+                snow = True
+            if alpha:
+                rock_color.append(alpha_value)
+                snow_color.append(alpha_value)
+            obj = mountain.Mountain(pos, 30, 30, rock_color, snow, snow_color)
         return obj
 
     def toggle_cursor_visibility(self, set_to = None):
-        if set_to != None:
-            self.mouse_visibility = set_to
-        else:
-            self.mouse_visibility = not self.mouse_visibility
-        self.set_mouse_visible(self.mouse_visibility)
+        self.cursor.toggle_visibility(set_to)
+        self.set_mouse_visible(self.cursor.visibility)
 
-    def update_cursor(self, dt):
-        if self.gui.contains_point(self.cursor_pos):
-            self.cursor_pic = None
+    def clock_ticked(self, dt):
+        self.update_cursor()
+        if self.gui.hovered:
+            self.gui.cursor_hovered(self.cursor.pos)
+
+    def update_cursor(self):
+        if self.gui.has_cursor(self.cursor.pos):
             self.toggle_cursor_visibility(True)
+            self.cursor.toggle_img_visibility(False)
             self.gui.hovered = True
-        else:
-            if self.cursor_type != None:
-                self.toggle_cursor_visibility(False)
-            else:
-                self.toggle_cursor_visibility(True)
+        elif self.cursor.type != None:
+            self.cursor.toggle_img_visibility(True)
+            self.toggle_cursor_visibility(False)
             self.gui.hovered = False
+        if self.cursor.type == "Map_obj":
+            self.cursor.img = self.make_map_obj(*self.cursor.args[:-1], True, 112, True)
 
-    def change_cursor_type(self, cursor_type, cursor_subtype):
-        self.cursor_type = cursor_type
-        self.cursor_subtype = cursor_subtype
+    def change_cursor_type(self, function, args, cursor_type):
+        self.cursor.function = function
+        self.cursor.args = args
+        self.cursor.type = cursor_type
 
 map_maker = Map_maker(1280, 720)
 map_maker.set_caption("Map Maker")
