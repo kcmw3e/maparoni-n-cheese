@@ -49,7 +49,7 @@ class Simple_polygon(object):
             self.points.append(point)
             self.flattened_points.extend([x, y])
 
-    def generate_trianglular_points(self):
+    def generate_trianglular_points(self): #for drawing the circle in triangles
         self.triangular_points = list()
         (x0, y0) = self.points[0]
         for i in range(1, len(self.points)-1):
@@ -57,7 +57,7 @@ class Simple_polygon(object):
             (x2, y2) = self.points[i+1]
             self.triangular_points.extend([x0, y0, x1, y1, x2, y2])
 
-    def generate_lines_points(self):
+    def generate_lines_points(self): #for drawing the circle in line loops
         self.lines_points = list()
         for i in range(len(self.points)):
             if i + 1 < len(self.points):

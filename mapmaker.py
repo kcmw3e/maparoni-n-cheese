@@ -33,6 +33,9 @@ class Map_maker(app.App):
         self.layer_width = self.width
         self.layer_height = self.height * .95
         self.layer_color = [240, 194, 112]
+
+        self.layer_color = [0, 0, 0]
+        
         self.layer_setup()
         self.clock_setup()
         self.cursor_setup()
@@ -81,7 +84,7 @@ class Map_maker(app.App):
         self.clock.schedule(self.clock_ticked)
 
     def voronoi_setup(self):
-        self.voronoi = voronoi.Voronoi(10, (100, 400), (100, 400), [255, 255, 255, 50])
+        self.voronoi = voronoi.Voronoi(10, (100, 1200), (100, 600), [255, 255, 255, 50])
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.ESCAPE:

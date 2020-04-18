@@ -12,6 +12,7 @@ class Vector(object):
     def __init__(self, pos, direction):
         self.beginning_point = pos
         self.direction = direction
+        self.endpoint = ((self.beginning_point[0] + self.direction[0]), (self.beginning_point[1] + self.direction[1]))
         self.angle = math.atan2(direction[1], direction[0])
         self.terminating_point = (self.beginning_point[0] + self.direction[0], 
                                   self.beginning_point[1] + self.direction[1])
