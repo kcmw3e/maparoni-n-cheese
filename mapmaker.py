@@ -17,6 +17,7 @@ import random
 from pyglet.window import key
 import gui
 import cursor
+import voronoi
 
 class Map_maker(app.App):
     def __init__(self, width, height):
@@ -36,6 +37,8 @@ class Map_maker(app.App):
         self.clock_setup()
         self.cursor_setup()
         self.gui_setup()
+
+        self.voronoi_setup()
 
     def layer_setup(self):
         self.layer = layer.Layer(self.layer_width, self.layer_height, self.layer_color)
@@ -60,8 +63,10 @@ class Map_maker(app.App):
         ]
         self.gui_button_labels = ["Tree",
                                   "Mountain"]
-        self.gui_button_colors = [ [112, 194, 255],
-                                   [112, 194, 255] ]
+        self.gui_button_label_colors = [ [255, 255, 255, 255],
+                                         [255, 255, 255, 255] ]
+        self.gui_button_colors = [ [50, 112, 255],
+                                   [50, 112, 255] ]
         self.gui_width = self.width
         self.gui_height = self.height - self.layer_height
         self.gui_color = [220, 112, 50]
@@ -69,15 +74,19 @@ class Map_maker(app.App):
         self.gui = gui.GUI(self.gui_pos, self.gui_width, self.gui_height,
                            self.gui_color, self.gui_button_functions,
                            self.gui_button_parameters, self.gui_button_labels,
-                           self.gui_button_colors)
+                           self.gui_button_colors, self.gui_button_label_colors)
 
     def clock_setup(self):
         self.clock = pyglet.clock.get_default()
         self.clock.schedule(self.clock_ticked)
 
+    def voronoi_setup(self):
+        self.voronoi = voronoi.Voronoi(10, (100, 400), (100, 400), [255, 255, 255, 50])
+
     def on_key_press(self, symbol, modifiers):
         if symbol == key.ESCAPE:
             self.gui.show_help_menu(True)
+            self.voronoi_setup()
 
     def on_key_release(self, symbol, modifiers):
         if symbol == key.ESCAPE:
@@ -86,6 +95,7 @@ class Map_maker(app.App):
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         super().on_mouse_scroll(x, y, scroll_x, scroll_y)
         self.cursor.pos = (x, y)
+        self.voronoi.increase_radii(scroll_y)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         super().on_mouse_press(x, y, buttons, modifiers)
@@ -109,6 +119,7 @@ class Map_maker(app.App):
         self.layer.draw()
         self.gui.draw()
         self.cursor.draw()
+        self.voronoi.draw()
 
     def on_resize(self, width, height):
         super().on_resize(width, height)

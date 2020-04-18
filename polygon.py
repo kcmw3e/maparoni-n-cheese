@@ -106,12 +106,19 @@ class Simple_polygon(object):
                 return False
         return True
 
-    def intersection(self, line):
-        intersections = set()
-        for vector in self.vectors:
-            intersection = vector.intersection(line)
-            if intersection != None:
-                intersections.add(intersection)
+    def intersections(self, other):
+        intersections = list()
+        if isinstance(other, Simple_polygon):
+            for vector in self.vectors:
+                for other_vector in other.vectors:
+                    if vector.intersects(other_vector):
+                        intersection = vector.intersection(other_vector)
+                        intersections.append(intersection)
+        elif isinstance(other, line.Line):
+            for vector in self.vectors:
+                intersection = vector.intersection(line)
+                if intersection != None:
+                    intersections.append(intersection)
         return intersections
 
     def rotate(self, dangle):

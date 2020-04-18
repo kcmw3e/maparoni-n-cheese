@@ -24,3 +24,6 @@ class Component(object):
             return True
         else:
             return False
+    
+    def draw(self):
+        self.vertex_list.draw(self.draw_type)

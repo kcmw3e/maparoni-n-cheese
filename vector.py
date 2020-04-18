@@ -57,10 +57,26 @@ class Vector(object):
             return True
         else:
             return False
-    
-    def intersection(self, line):
-        if self.line.intersects(line):
-            intersection = self.line.intersection(line)
-            if self.point_in_domain_and_range(intersection):
-                return intersection
-        return None
+
+    def intersects(self, other):
+        if isinstance(other, Vector):
+            if self.line.intersects(other.line):
+                intersection = self.line.intersection(other.line)
+                if self.point_in_domain_and_range(intersection) and other.point_in_domain_and_range(intersection):
+                    return True
+        elif isinstance(other, line.Line):
+            if self.line.intersects(other):
+                intersection = self.line.intersection(other)
+                if self.point_in_domain_and_range(intersection):
+                    return True
+        return False
+
+    def intersection(self, other):
+        if isinstance(other, line.Line):
+            if self.line.intersects(line):
+                intersection = self.line.intersection(line)
+                if self.point_in_domain_and_range(intersection):
+                    return intersection
+            return None
+        elif isinstance(other, Vector):
+            return self.line.intersection(other.line)

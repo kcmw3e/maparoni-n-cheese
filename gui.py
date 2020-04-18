@@ -2,7 +2,7 @@ import pyglet
 import shapes
 
 class GUI(object):
-    def __init__(self, pos, width, height, background_color, button_functions, button_parameters, button_labels, button_colors):
+    def __init__(self, pos, width, height, background_color, button_functions, button_parameters, button_labels, button_colors, button_label_colors):
         self.pos = pos
         self.width = width
         self.height = height
@@ -15,12 +15,14 @@ class GUI(object):
         self.button_functions = button_functions
         self.button_parameters = button_parameters
         self.button_labels = button_labels
+        self.button_label_colors = button_label_colors
         self.button_height = 20
         self.button_width = 70
         self.button_padding = 20
         self.button_colors = button_colors
         self.button_border_color = [0, 0, 0]
         self.button_hover_color = [100, 0, 80]
+        self.batch_labels = pyglet.graphics.Batch()
 
         self.generate_buttons()
 
@@ -37,6 +39,7 @@ class GUI(object):
             parameters = self.button_parameters[i]
             label = self.button_labels[i]
             color = self.button_colors[i]
+            label_color = self.button_label_colors[i]
             x = i * (self.button_width + self.button_padding) + self.button_width / 2 + self.button_padding
             y = self.pos[1]
             pos = (x, y)
@@ -44,11 +47,7 @@ class GUI(object):
             self.buttons.append(b)
             b.vertex_list = self.batch.add(len(b.shape.triangular_points) // 2, pyglet.gl.GL_TRIANGLES, None, b.vertices, b.vertices_colors)
             b.border_vertex_list = self.batch.add(len(b.shape.lines_points) // 2, pyglet.gl.GL_LINES, None, b.border_vertices, b.border_vertices_colors)
-            b.label = pyglet.text.Label(b.label_name,
-                          font_name='Times New Roman',
-                          font_size=10,
-                          x=b.pos[0], y=b.pos[1],
-                          anchor_x='center', anchor_y='center', batch = self.batch, color = [0,0,0,255])
+            b.label = pyglet.text.Label(b.label_name, font_name = 'Times New Roman', font_size = 10 ,x = b.pos[0] , y = b.pos[1] ,anchor_x = 'center', anchor_y = 'center', batch = self.batch_labels, color = label_color)
 
     def has_cursor(self, cursor_pos):
         return self.background_shape.contains_point(cursor_pos)
@@ -67,6 +66,7 @@ class GUI(object):
 
     def draw(self):
         self.batch.draw()
+        self.batch_labels.draw()
 
 class Button(object):
     def __init__(self, function, parameters, pos, label_name, width, height, color, border_color, hover_color):
