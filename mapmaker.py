@@ -35,7 +35,7 @@ class Map_maker(app.App):
         self.layer_color = [240, 194, 112]
 
         self.layer_color = [0, 0, 0]
-        
+
         self.layer_setup()
         self.clock_setup()
         self.cursor_setup()
@@ -84,12 +84,16 @@ class Map_maker(app.App):
         self.clock.schedule(self.clock_ticked)
 
     def voronoi_setup(self):
-        self.voronoi = voronoi.Voronoi(10, (100, 1200), (100, 600), [255, 255, 255, 50])
+        #self.voronoi = voronoi.Voronoi(3, (100, 1200), (100, 600), [255, 255, 255, 50])
+        self.voronoi = voronoi.Voronoi(4, (000, 600), (000, 600), [255, 255, 255, 50])
+        self.paused = False
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.ESCAPE:
             self.gui.show_help_menu(True)
             self.voronoi_setup()
+        if symbol == key.SPACE:
+            self.paused = not self.paused
 
     def on_key_release(self, symbol, modifiers):
         if symbol == key.ESCAPE:
@@ -162,6 +166,7 @@ class Map_maker(app.App):
         self.update_cursor()
         if self.gui.hovered:
             self.gui.cursor_hovered(self.cursor.pos)
+        if not self.paused: self.voronoi.increase_radii(.5)
 
     def update_cursor(self):
         if self.gui.has_cursor(self.cursor.pos):

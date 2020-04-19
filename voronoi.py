@@ -66,31 +66,28 @@ class Voronoi(object):
 
     def do_intersections(self):
         self.lines = list()
+        
+        self.other_lines = list()
+
         self.vectors = list()
-        for seed in self.seeds:
+        for seed in self.seeds[:1]:
+            seed_intersections = list()
             for other_seed in self.seeds:
                 if seed != other_seed:
                     if seed.intersects(other_seed):
-                        seed.intersecting_seeds.add(other_seed)
-                    intersections = seed.intersections(other_seed)
-                    seed.intersections_with_other_seeds = intersections
-                    seed.deal_with_other_seeded_intersections()
-                    for i in range(len(intersections)):
-                        j = i - 1
-                        intersection = intersections[i]
-                        previous_intersection = intersections[j]
-                        (x1, y1) = intersection
-                        (x2, y2) = previous_intersection
-                        self.lines.extend([x1, y1, x2, y2])
-                    for v in seed.vectors:
-                        (x1, y1) = v.beginning_point
-                        (x2, y2) = v.endpoint
-                        self.lines.extend([x1, y1, x2, y2])
+                        intersections = seed.intersections(other_seed)
+                        seed_intersections.append(intersections)
+                seed.deal_with_other_seeded_intersections(seed_intersections)
+                self.lines.extend(seed.points)
+
+                self.other_lines.extend(seed.other_points)
+        self.other_lines = pyglet.graphics.vertex_list(len(self.other_lines)//2, ("v2f", self.other_lines), ("c3B", [100,100,100]*(len(self.other_lines)//2)))
         self.lines = pyglet.graphics.vertex_list(len(self.lines)//2, ("v2f", self.lines), ("c3B", [0,0,0]*(len(self.lines)//2)))
 
     def draw(self):
         self.batch.draw()
         self.lines.draw(pyglet.gl.GL_LINES)
+        self.other_lines.draw(pyglet.gl.GL_LINES)
 
 class Voronoi_seed(object):
     def __init__(self, pos, color):
@@ -100,7 +97,6 @@ class Voronoi_seed(object):
         self.make_shape()
         self.vertices = ("v2f", self.shape.triangular_points)
         self.vertices_colors = (f"c{len(self.color)}B", self.color * (len(self.shape.triangular_points) // 2))
-        self.intersecting_seeds = set()
         self.intersections_with_other_seeds = list()
 
     def __hash__(self):
@@ -123,32 +119,92 @@ class Voronoi_seed(object):
     def intersections(self, other):
         return self.shape.intersections(other.shape)
 
-    def deal_with_other_seeded_intersections(self):
-        self.perimeter_vectors = list()
-        self.vectors = list()
-        for i in range(len(self.intersections_with_other_seeds)):
-            j = i - 1
-            (x1, y1) = self.intersections_with_other_seeds[i]
-            (x2, y2) = self.intersections_with_other_seeds[j]
+    def deal_with_other_seeded_intersections(self, intersection_pairs):
+        self.seed_intersection_vectors = list()
+        for ((x1, y1), (x2, y2)) in intersection_pairs:
             dx = x2 - x1
             dy = y2 - y1
             vector = shapes.Vector((x1, y1), (dx, dy))
-            self.perimeter_vectors.append(vector)
-        (x1, y1) = self.pos
-        for vector in self.perimeter_vectors:
-            for (x2, y2) in (vector.beginning_point, vector.endpoint):
-                dx = x2 - x1
-                dy = y2 - y1
-                new_vector = shapes.Vector((x1, y1), (dx, dy))
-                for v in self.perimeter_vectors:
-                    if new_vector != v and new_vector.intersects(v):
-                        (x2, y2) = new_vector.intersection(v)
-                        dx = x2 - x1
-                        dy = y2 - y1
-                        if dx == 0 and dy == 0:
-                            continue
-                        new_vector = shapes.Vector((x1, y1), (dx, dy))
-                self.vectors.append(new_vector)
+            self.seed_intersection_vectors.append(vector)
+
+        radial_vectors = list()
+        for vector in self.seed_intersection_vectors:
+            for other_vector in self.seed_intersection_vectors:
+                if vector.intersects(other_vector):
+                    (x1, y1) = self.pos
+                    (x2, y2) = vector.intersection(other_vector)
+                    dx = x2 - x1
+                    dy = y2 - y1
+                    radial_vector = shapes.Vector((self.pos), ((dx, dy)))
+                    radial_vector_crosses = 0
+                    for v in self.seed_intersection_vectors:
+                        if radial_vector.intersects(v) and not is_near(radial_vector.terminating_point, radial_vector.intersection(v), 1):
+                            radial_vector_crosses += 1
+                    if radial_vector_crosses < 1:
+                        radial_vectors.append(radial_vector)
+
+        for vector in self.seed_intersection_vectors:
+            (x1, y1) = self.pos
+            (x2, y2) = vector.beginning_point
+            (x3, y3) = vector.terminating_point
+            dx1 = x2 - x1
+            dx2 = x3 - x1
+            dy1 = y2 - y1
+            dy2 = y3 - y1
+            radial_vector1 = shapes.Vector((self.pos), (dx1, dy1))
+            radial_vector2 = shapes.Vector((self.pos), (dx2, dy2))
+            radial_vector1_crosses = 0
+            radial_vector2_crosses = 0
+            for vector in self.seed_intersection_vectors:
+                if radial_vector1.intersects(vector) and not is_near(radial_vector1.terminating_point, radial_vector1.intersection(vector), 1):
+                    radial_vector1_crosses += 1
+                if radial_vector2.intersects(vector) and not is_near(radial_vector2.terminating_point, radial_vector2.intersection(vector), 1):
+                    radial_vector2_crosses += 1
+            if radial_vector1_crosses < 1:
+                radial_vectors.append(radial_vector1)
+            if radial_vector2_crosses < 1:
+                radial_vectors.append(radial_vector2)
+
+        new_vectors = list()
+        for vector in radial_vectors:
+            crosses = 0
+            for other_vector in self.seed_intersection_vectors:
+                if vector.intersects(other_vector) and not is_near(vector.terminating_point, vector.intersection(other_vector), .3):
+                    crosses += 1
+            if crosses < 1:
+                new_vectors.append(vector)
+        radial_vectors = new_vectors
+
+        radial_vectors_by_angle = dict()
+        radial_vectors_angles = list()
+        for vector in radial_vectors:
+            angle = vector.angle
+            radial_vectors_by_angle[angle] = vector
+            radial_vectors_angles.append(angle)
+
+        points = list()
+        new_radial_vectors = list()
+        for angle in sorted(radial_vectors_angles):
+            vector = radial_vectors_by_angle[angle]
+            new_radial_vectors.append(vector)
+
+        for i in range(len(new_radial_vectors)):
+            j = i - 1
+            vector1 = new_radial_vectors[i]
+            vector2 = new_radial_vectors[j]
+            (x1, y1) = vector1.terminating_point
+            (x2, y2) = vector2.terminating_point          
+            points.extend([x1, y1, x2, y2])
+
+        other_points = list()
+        for v in radial_vectors:
+            (x1, y1) = v.beginning_point
+            (x2, y2) = v.terminating_point
+            other_points.extend([x1,y1,x2,y2])
+        self.other_points = other_points
+
+        self.points = points
+        self.radial_vectors = new_radial_vectors
 
 def is_near(p1, p2, nearness = 50):
     (x1, y1) = p1

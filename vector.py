@@ -12,15 +12,15 @@ class Vector(object):
     def __init__(self, pos, direction):
         self.beginning_point = pos
         self.direction = direction
-        self.endpoint = ((self.beginning_point[0] + self.direction[0]), (self.beginning_point[1] + self.direction[1]))
-        self.angle = math.atan2(direction[1], direction[0])
+
+        self.angle = math.atan2(direction[1], direction[0]) #angle from horizontal
         self.terminating_point = (self.beginning_point[0] + self.direction[0], 
                                   self.beginning_point[1] + self.direction[1])
         self.magnitude = (self.direction[0] ** 2 + self.direction[1] ** 2) ** (1/2)
         self.line = line.Line(pos, line.Line.find_slope(self.beginning_point, self.terminating_point))
 
     def __repr__(self):
-        return f"Vector {self.direction} at {self.beginning_point}"
+        return f"Vector {(int(self.direction[0]), int(self.direction[1]))} at {(int(self.beginning_point[0]), int(self.beginning_point[1]))}"
 
     @staticmethod
     def get_unit_vector(vector):
@@ -81,3 +81,8 @@ class Vector(object):
             return None
         elif isinstance(other, Vector):
             return self.line.intersection(other.line)
+
+def is_near(p1, p2, nearness = 50):
+    (x1, y1) = p1
+    (x2, y2) = p2
+    return abs(x1 - x2) < nearness and abs(y1 - y2) < nearness
