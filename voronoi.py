@@ -10,6 +10,7 @@ class Voronoi(object):
         self.number_of_seeds = number_of_seeds
         self.seed_padding = seed_padding
         self.sweepline_height = 0
+        self.sweepline = shapes.Line((0, self.sweepline_height), 0)
         if self.generate_seed_points():
             self.generate_seeds()
         else:
@@ -17,7 +18,7 @@ class Voronoi(object):
         self.generate_borderlines()
 
     def generate_seed_points(self, depth = 0):
-        if depth > 50:
+        if depth > 500:
             return False
         points = list()
         max_iterations = 1000
@@ -29,9 +30,10 @@ class Voronoi(object):
             if len(points) > 0:
                 point_invalid = False
                 for other_point in points:
-                    if (isnear(point, other_point, self.seed_padding) and
-                        not (self.seed_padding < x < self.width - self.seed_padding and
-                        self.seed_padding < y < self.height - self.seed_padding)):
+                    """if (isnear(point, other_point, self.seed_padding) or
+                        (self.seed_padding < x < self.width - self.seed_padding and
+                        self.seed_padding < y < self.height - self.seed_padding)):"""
+                    if isnear(point, other_point, self.seed_padding):
                             point_invalid = True
                 if not point_invalid:
                     points.append(point)
@@ -57,15 +59,19 @@ class Voronoi(object):
         t_line = shapes.Line((0, self.height), 0)
         self.borderlines = [l_line, r_line, b_line, t_line]
 
+    def solve(self):
+        while self.sweepline_height < self.height * 1.75:
+            self.move_sweepline(.05)
+
     def move_sweepline(self, dy):
         self.sweepline_height += dy
-        self.sweepline = shapes.Line((0, self.sweepline_height), 0)
+        self.sweepline.y = self.sweepline_height
         self.test_seeds()
 
     def test_seeds(self):
         for seed in self.seeds:
             if not seed.active and self.sweepline > seed.pos:
-                seed.activate(self.sweepline_height, 0, self.width, 0, self.height)
+                seed.activate(self.sweepline_height, 0, self.width, 0, self.height, self.borderlines)
             elif not seed.complete and seed.active:
                 seed.adjust(self.sweepline_height, self.seeds, self.borderlines)
 
@@ -76,50 +82,80 @@ class Voronoi_seed(object):
         self.complete = False
         self.parabola = None
         self.intersections = dict()
-        self.border_intersections = set()
+        self.border_intersections = dict()
 
     def __lt__(self, sweepline):
         return self.pos[1] < sweepline.point[1] #using the y-values
 
-    def activate(self, sweepline, x_min, x_max, y_min, y_max):
+    def activate(self, sweepline, x_min, x_max, y_min, y_max, borderlines):
         self.active = True
         self.parabola = shapes.Parabola(sweepline, self.pos)
         self.parabola.open_domain(x_min, x_max)
         self.parabola.open_range(y_min, y_max)
+        for line in borderlines:
+            self.border_intersections[line] = [None, None]
 
     def adjust(self, sweepline, other_seeds, border_lines):
         self.parabola.directrix = sweepline
         for line in border_lines:
-            intersections = self.parabola.intersections(line)
-            if intersections != None:
-                for intersection in intersections:
-                    self.border_intersections.add(intersection)
+                intersections = self.parabola.intersections(line)
+                for (i, intersection) in enumerate(intersections):
+                    self.border_intersections[line][i] = intersection
         for seed in other_seeds:
-            if seed != self and seed.active:
+            if seed.active and seed != self:
                 intersections = self.parabola.intersections(seed.parabola)
-                if intersections != None:
-                    if seed not in self.intersections:
-                        self.intersections[seed] = [None, None]
-                    for (i, intersection) in enumerate(intersections):
-                        if (self.parabola.point_in_domain(intersection) and
-                            self.parabola.point_in_range(intersection)):
-                                invalid = False
-                                for test_seed in other_seeds:
-                                    if test_seed.active and test_seed.parabola > intersection:
+                if seed not in self.intersections:
+                    self.intersections[seed] = [None, None]
+                for (i, intersection) in enumerate(intersections):
+                    if (self.parabola.point_in_domain(intersection) and
+                        self.parabola.point_in_range(intersection)):
+                            invalid = False
+                            for test_seed in other_seeds:
+                                if (test_seed != self and test_seed != seed and 
+                                    test_seed.active and 
+                                    test_seed.parabola > intersection):
                                         invalid = True
-                                if not invalid:
-                                    self.intersections[seed][i] = intersection
+                            if not invalid:
+                                self.intersections[seed][i] = intersection
 
-    def check_intersections(self):
-        pass
+    def poll_points(self):
+        points = list()
+        for seed in self.intersections:
+            for intersection in self.intersections[seed]:
+                if intersection != None:
+                    points.append(intersection)
+        if len(points) == 0:
+            return []
+        points = ordered(self.pos, points)
+        (x1, y1) = points[0]
+        ordered_flattened_points = [x1, y1]
+        for point in points[1:]:
+            (x, y) = point
+            ordered_flattened_points.extend([x, y] * 2)
+        ordered_flattened_points.extend([x1, y1])
+        return ordered_flattened_points
 
 def isnear(point1, point2, nearness):
     (x1, y1) = point1
     (x2, y2) = point2
-    return abs(x1 - x2) < nearness and abs(y1 - y2) < nearness
+    return abs(x1 - x2) < nearness or abs(y1 - y2) < nearness
 
-
-
+def ordered(pos, points):
+    ordered_points_dict = dict()
+    angles = list()
+    (x1, y1) = pos
+    for point in points:
+        (x2, y2) = point
+        dx = x2 - x1
+        dy = y2 - y1
+        v = shapes.Vector(pos, (dx, dy))
+        angle = v.angle
+        ordered_points_dict[angle] = point
+        angles.append(angle)
+    ordered_points = list()
+    for angle in sorted(angles):
+        ordered_points.append(ordered_points_dict[angle])
+    return ordered_points
 
 
 

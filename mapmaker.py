@@ -30,20 +30,18 @@ class Map_maker(app.App):
         self.rock_color = [112, 112, 112]
         self.snow_color = [255, 255, 255]
 
-        self.layer_width = self.width
-        self.layer_height = self.height * .95
-        self.layer_color = [240, 194, 112]
-
-        self.layer_color = [0,0,0]
 
         self.layer_setup()
         self.clock_setup()
         self.cursor_setup()
         self.gui_setup()
-
         self.voronoi_setup()
 
     def layer_setup(self):
+        self.layer_percent = 0.95
+        self.layer_width = self.width
+        self.layer_height = self.height * self.layer_percent
+        self.layer_color = [240, 194, 112]
         self.layer = layer.Layer(self.layer_width, self.layer_height, self.layer_color)
 
     def cursor_setup(self):
@@ -51,7 +49,8 @@ class Map_maker(app.App):
 
     def gui_setup(self):
         self.gui_button_functions = [self.change_cursor_type, 
-                                     self.change_cursor_type]
+                                     self.change_cursor_type,
+                                     self.generate_random_map]
         self.gui_button_parameters = [ 
             [
                 self.add_map_obj, 
@@ -62,13 +61,19 @@ class Map_maker(app.App):
                 self.add_map_obj,
                 (self.cursor.get_pos, "Mountain", "Snowy", True),
                 "Map_obj"
-                ] 
+                ],
+            [
+                
+            ]
         ]
         self.gui_button_labels = ["Tree",
-                                  "Mountain"]
+                                  "Mountain",
+                                  "Random Map"]
         self.gui_button_label_colors = [ [255, 255, 255, 255],
+                                         [255, 255, 255, 255],
                                          [255, 255, 255, 255] ]
         self.gui_button_colors = [ [50, 112, 255],
+                                   [50, 112, 255],
                                    [50, 112, 255] ]
         self.gui_width = self.width
         self.gui_height = self.height - self.layer_height
@@ -84,28 +89,24 @@ class Map_maker(app.App):
         self.clock.schedule(self.clock_ticked)
 
     def voronoi_setup(self):
-        #self.voronoi = voronoi.Circular_voronoi(3, (100, 1200), (100, 600), [255, 255, 255, 50])
-        self.voronoi = voronoi.Voronoi(self.width, self.layer_height, 30, 50)
-        self.paused = False
-        self.b_m = 0
+        self.voronoi_seeds_number = 10
+        self.voronoi_seeds_padding = 50
+        self.voronoi = voronoi.Voronoi(self.width, self.layer_height, self.voronoi_seeds_number, self.voronoi_seeds_padding)
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.ESCAPE:
             self.gui.show_help_menu(True)
             self.voronoi_setup()
-        if symbol == key.SPACE:
-            self.paused = not self.paused
-            self.b_m = 0
 
     def on_key_release(self, symbol, modifiers):
         if symbol == key.ESCAPE:
             self.gui.show_help_menu(False)
+        if symbol == key.SPACE:
+            self.voronoi.solve()
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         super().on_mouse_scroll(x, y, scroll_x, scroll_y)
         self.cursor.pos = (x, y)
-        #self.voronoi.increase_radii(scroll_y)
-        self.b_m = scroll_y
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         super().on_mouse_press(x, y, buttons, modifiers)
@@ -129,10 +130,9 @@ class Map_maker(app.App):
         self.layer.draw()
         self.gui.draw()
         self.cursor.draw()
-        #self.voronoi.draw()
         self.v.draw(pyglet.gl.GL_LINES)
-        self.a.draw(pyglet.gl.GL_TRIANGLES)
-        self.b.draw(pyglet.gl.GL_LINES)
+        self.a.draw(pyglet.gl.GL_LINES)
+        #self.b.draw(pyglet.gl.GL_LINES)
 
     def on_resize(self, width, height):
         super().on_resize(width, height)
@@ -164,6 +164,14 @@ class Map_maker(app.App):
             obj = mountain.Mountain(pos, 30, 30, rock_color, snow, snow_color)
         return obj
 
+    def generate_random_map(self):
+        self.voronoi_setup()
+        self.voronoi.solve()
+        self.populate_voronoi()
+
+    def populate_voronoi(self):
+        pass
+
     def toggle_cursor_visibility(self, set_to = None):
         self.cursor.toggle_visibility(set_to)
         self.set_mouse_visible(self.cursor.visibility)
@@ -172,8 +180,7 @@ class Map_maker(app.App):
         self.update_cursor()
         if self.gui.hovered:
             self.gui.cursor_hovered(self.cursor.pos)
-        #if not self.paused: self.voronoi.increase_radii(.5)
-        self.voronoi.move_sweepline(1)
+        #self.voronoi.move_sweepline(.1)
         (x1, y1) = (0, self.voronoi.sweepline.y)
         (x2, y2) = (self.width, self.voronoi.sweepline.y)
         p = [x1,y1,x2,y2]
@@ -183,22 +190,17 @@ class Map_maker(app.App):
         self.b = None
         self.v = None
         for s in self.voronoi.seeds:
-            c = shapes.Circle(s.pos, 3, 3)
-            p1.extend(c.triangular_points)
+            c = shapes.Circle(s.pos, 5, 5)
+            p1.extend(c.lines_points)
             if s.active:
-                points = s.parabola.sample_points(50, 0, 1280, True)
+                points = s.parabola.sample_points(50, 0, 1300, True)
                 p2.extend(points)
-        if p2 != []:
-            self.b = pyglet.graphics.vertex_list(len(p2) //2 , ("v2f", p2), ("c3B", [255,0,0]*(len(p2)//2)))
-        for seed in self.voronoi.seeds[:]:
-            for other_seed in seed.intersections:
-                i = seed.intersections[other_seed]
-                for inter in i:
-                    if inter != None:
-                        c = shapes.Circle(inter, 5, 10)
-                        p1.extend(c.triangular_points)
-        self.a = pyglet.graphics.vertex_list(len(p1) //2 , ("v2f", p1), ("c3B", [0, 255, 0] + [255,0,0]*(len(p1)//2-1)))
-        self.v = pyglet.graphics.vertex_list(2, ("v2f", p), ("c3B", [255,0,0]*2))
+        self.b = pyglet.graphics.vertex_list(len(p2) //2 , ("v2f", tuple(p2)), ("c3B", [50, 168, 82]*(len(p2)//2)))
+        for seed in self.voronoi.seeds:
+            points = seed.poll_points()
+            p1.extend(points)
+        self.a = pyglet.graphics.vertex_list(len(p1) //2 , ("v2f", tuple(p1)), ("c3B", [255,0,0]*(len(p1)//2)))
+        self.v = pyglet.graphics.vertex_list(2, ("v2f", tuple(p)), ("c3B", [255,0,0]*2))
 
     def update_cursor(self):
         if self.gui.has_cursor(self.cursor.pos):

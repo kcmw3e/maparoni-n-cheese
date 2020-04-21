@@ -17,7 +17,7 @@ class GUI(object):
         self.button_labels = button_labels
         self.button_label_colors = button_label_colors
         self.button_height = 20
-        self.button_width = 70
+        self.button_width = 90
         self.button_padding = 20
         self.button_colors = button_colors
         self.button_border_color = [0, 0, 0]

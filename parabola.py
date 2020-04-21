@@ -83,7 +83,7 @@ class Parabola(object):
                     return [p1]
 
             except:
-                return None
+                return [] #changed from None
         elif isinstance(other, line.Line):
             #solve: (s for self, o for other)
             #(1 / (4 * sp)) * (x - sh) ** 2 + sk = m * (x - oh) + ok
