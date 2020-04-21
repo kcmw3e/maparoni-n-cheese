@@ -34,7 +34,7 @@ class Map_maker(app.App):
         self.layer_height = self.height * .95
         self.layer_color = [240, 194, 112]
 
-        self.layer_color = [0, 0, 0]
+        self.layer_color = [0,0,0]
 
         self.layer_setup()
         self.clock_setup()
@@ -84,9 +84,10 @@ class Map_maker(app.App):
         self.clock.schedule(self.clock_ticked)
 
     def voronoi_setup(self):
-        #self.voronoi = voronoi.Voronoi(3, (100, 1200), (100, 600), [255, 255, 255, 50])
-        self.voronoi = voronoi.Voronoi(4, (000, 600), (000, 600), [255, 255, 255, 50])
+        #self.voronoi = voronoi.Circular_voronoi(3, (100, 1200), (100, 600), [255, 255, 255, 50])
+        self.voronoi = voronoi.Voronoi(self.width, self.layer_height, 3, 10)
         self.paused = False
+        self.b_m = 0
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.ESCAPE:
@@ -94,6 +95,7 @@ class Map_maker(app.App):
             self.voronoi_setup()
         if symbol == key.SPACE:
             self.paused = not self.paused
+            self.b_m = 0
 
     def on_key_release(self, symbol, modifiers):
         if symbol == key.ESCAPE:
@@ -102,7 +104,8 @@ class Map_maker(app.App):
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         super().on_mouse_scroll(x, y, scroll_x, scroll_y)
         self.cursor.pos = (x, y)
-        self.voronoi.increase_radii(scroll_y)
+        #self.voronoi.increase_radii(scroll_y)
+        self.b_m = scroll_y
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         super().on_mouse_press(x, y, buttons, modifiers)
@@ -126,7 +129,10 @@ class Map_maker(app.App):
         self.layer.draw()
         self.gui.draw()
         self.cursor.draw()
-        self.voronoi.draw()
+        #self.voronoi.draw()
+        self.v.draw(pyglet.gl.GL_LINES)
+        self.a.draw(pyglet.gl.GL_TRIANGLES)
+        self.b.draw(pyglet.gl.GL_LINES)
 
     def on_resize(self, width, height):
         super().on_resize(width, height)
@@ -166,7 +172,33 @@ class Map_maker(app.App):
         self.update_cursor()
         if self.gui.hovered:
             self.gui.cursor_hovered(self.cursor.pos)
-        if not self.paused: self.voronoi.increase_radii(.5)
+        #if not self.paused: self.voronoi.increase_radii(.5)
+        self.voronoi.move_sweepline(self.b_m)
+        (x1, y1) = (0, self.voronoi.sweepline.y)
+        (x2, y2) = (self.width, self.voronoi.sweepline.y)
+        p = [x1,y1,x2,y2]
+        p1 = list()
+        p2 = list()
+        self.a = None
+        self.b = None
+        self.v = None
+        for s in self.voronoi.seeds:
+            c = shapes.Circle(s.pos, 3, 3)
+            p1.extend(c.triangular_points)
+            if s.active:
+                points = s.parabola.sample_points(50, 0, 1280, True)
+                p2.extend(points)
+        if p2 != []:
+            self.b = pyglet.graphics.vertex_list(len(p2) //2 , ("v2f", p2), ("c3B", [255,0,0]*(len(p2)//2)))
+        for seed in self.voronoi.seeds[:1]:
+            for other_seed in seed.intersections:
+                i1, i2 = seed.intersections[other_seed]
+                c1 = shapes.Circle(i1, 5, 10)
+                c2 = shapes.Circle(i2, 5, 10)
+                p1.extend(c1.triangular_points)
+                p1.extend(c2.triangular_points)
+        self.a = pyglet.graphics.vertex_list(len(p1) //2 , ("v2f", p1), ("c3B", [255,0,0]*(len(p1)//2)))
+        self.v = pyglet.graphics.vertex_list(2, ("v2f", p), ("c3B", [255,0,0]*2))
 
     def update_cursor(self):
         if self.gui.has_cursor(self.cursor.pos):

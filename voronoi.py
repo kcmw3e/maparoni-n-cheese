@@ -4,6 +4,146 @@ import pyglet
 import random
 
 class Voronoi(object):
+    def __init__(self, width, height, number_of_seeds, seed_padding):
+        self.width = width
+        self.height = height
+        self.number_of_seeds = number_of_seeds
+        self.seed_padding = seed_padding
+        self.sweepline_height = 0
+        if self.generate_seed_points():
+            self.generate_seeds()
+        else:
+            print("ERROR")
+        self.generate_borderlines()
+
+    def generate_seed_points(self, depth = 0):
+        if depth > 50:
+            return False
+        points = list()
+        max_iterations = 1000
+        iterations = 0
+        while len(points) < self.number_of_seeds and iterations < max_iterations:
+            x = random.randint(0, self.width)
+            y = random.randint(0, self.height)
+            point = (x, y)
+            if len(points) > 0:
+                point_invalid = False
+                for other_point in points:
+                    if (isnear(point, other_point, self.seed_padding) and
+                        not (self.seed_padding < x < self.width - self.seed_padding and
+                        self.seed_padding < y < self.height - self.seed_padding)):
+                            point_invalid = True
+                if not point_invalid:
+                    points.append(point)
+            else:
+                points.append(point)
+            iterations += 1
+        if iterations >= max_iterations:
+            success = self.generate_seed_points(depth + 1)
+            if not success:
+                return False
+        self.points = points
+        return True
+
+    def generate_seeds(self):
+        self.seeds = list()
+        for point in self.points:
+            self.seeds.append(Voronoi_seed(point))
+
+    def generate_borderlines(self):
+        l_line = shapes.Line((0, 0), None)
+        r_line = shapes.Line((self.width, 0), None)
+        b_line = shapes.Line((0, 0), 0)
+        t_line = shapes.Line((0, self.height), 0)
+        self.borderlines = [l_line, r_line, b_line, t_line]
+
+    def move_sweepline(self, dy):
+        self.sweepline_height += dy
+        self.sweepline = shapes.Line((0, self.sweepline_height), 0)
+        self.test_seeds()
+
+    def test_seeds(self):
+        for seed in self.seeds:
+            if not seed.active and self.sweepline > seed.pos:
+                seed.activate(self.sweepline_height, 0, self.width, 0, self.height)
+            elif not seed.complete and seed.active:
+                seed.adjust(self.sweepline_height, self.seeds, self.borderlines)
+
+class Voronoi_seed(object):
+    def __init__(self, pos):
+        self.pos = pos
+        self.active = False
+        self.complete = False
+        self.parabola = None
+        self.intersections = dict()
+        self.border_intersections = set()
+
+    def __lt__(self, sweepline):
+        return self.pos[1] < sweepline.point[1] #using the y-values
+
+    def activate(self, sweepline, x_min, x_max, y_min, y_max):
+        self.active = True
+        self.parabola = shapes.Parabola(sweepline, self.pos)
+        self.parabola.open_domain(x_min, x_max)
+        self.parabola.open_range(y_min, y_max)
+
+    def adjust(self, sweepline, other_seeds, border_lines):
+        self.parabola.directrix = sweepline
+        for line in border_lines:
+            intersections = self.parabola.intersections(line)
+            if intersections != None:
+                for intersection in intersections:
+                    self.border_intersections.add(intersection)
+        for seed in other_seeds:
+            if seed != self and seed.active:
+                intersections = self.parabola.intersections(seed.parabola)
+                if intersections != None:
+                    for intersection in intersections:
+                        if (self.parabola.point_in_domain(intersection) and
+                            self.parabola.point_in_range(intersection)):
+                                self.intersections[seed] = intersections
+
+def isnear(point1, point2, nearness):
+    (x1, y1) = point1
+    (x2, y2) = point2
+    return abs(x1 - x2) < nearness and abs(y1 - y2) < nearness
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Circular_voronoi(object):
     def __init__(self, number_of_seeds, x_range, y_range, background_color):
         self.number_of_seeds = number_of_seeds
         self.x_range = x_range
@@ -53,7 +193,7 @@ class Voronoi(object):
                 b = random.randint(0, 255)
                 a = 30
                 color = [r, g, b, a]
-                seed = Voronoi_seed(point, color)
+                seed = Circular_voronoi_seed(point, color)
                 seed.vertex_list = self.batch.add(len(seed.shape.triangular_points) // 2, pyglet.gl.GL_TRIANGLES, None, seed.vertices, seed.vertices_colors)
                 seed.point = self.batch.add(1, pyglet.gl.GL_POINTS, None, ("v2f", [x,y]), ("c3b", [0, 0, 0]))
                 self.seeds.append(seed)
@@ -89,7 +229,7 @@ class Voronoi(object):
         self.lines.draw(pyglet.gl.GL_LINES)
         self.other_lines.draw(pyglet.gl.GL_LINES)
 
-class Voronoi_seed(object):
+class Circular_voronoi_seed(object):
     def __init__(self, pos, color):
         self.pos = pos
         self.color = tuple(color)

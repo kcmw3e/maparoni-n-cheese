@@ -19,14 +19,14 @@ class Line(object):
             return True
         else:
             return False
-        
+
     def __lt__(self, point):
         (x, y) = point
         if self.output(x) < y:
             return True
         else:
             return False
-    
+
     def __repr__(self):
         return f"y = {self.slope} * (x - {self.x}) + {self.y}"
 
