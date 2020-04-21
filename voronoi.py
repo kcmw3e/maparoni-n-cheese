@@ -98,10 +98,20 @@ class Voronoi_seed(object):
             if seed != self and seed.active:
                 intersections = self.parabola.intersections(seed.parabola)
                 if intersections != None:
-                    for intersection in intersections:
+                    if seed not in self.intersections:
+                        self.intersections[seed] = [None, None]
+                    for (i, intersection) in enumerate(intersections):
                         if (self.parabola.point_in_domain(intersection) and
                             self.parabola.point_in_range(intersection)):
-                                self.intersections[seed] = intersections
+                                invalid = False
+                                for test_seed in other_seeds:
+                                    if test_seed.active and test_seed.parabola > intersection:
+                                        invalid = True
+                                if not invalid:
+                                    self.intersections[seed][i] = intersection
+
+    def check_intersections(self):
+        pass
 
 def isnear(point1, point2, nearness):
     (x1, y1) = point1

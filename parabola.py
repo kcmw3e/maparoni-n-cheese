@@ -11,6 +11,14 @@ class Parabola(object):
         self.min_x = self.min_y = -math.inf
         self.max_x = self.max_y = math.inf
 
+    def __gt__(self, point):
+        x = point[0]
+        y = self.output(x)
+        if abs(y - point[1]) < 1:
+            return False
+        else:
+            return y > point[1]
+
     def output(self, x):
         #equation of a parabola using focus/directix:
         #y = (1 / (4 * p)) * (x - h) ** 2 + k

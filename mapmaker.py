@@ -85,7 +85,7 @@ class Map_maker(app.App):
 
     def voronoi_setup(self):
         #self.voronoi = voronoi.Circular_voronoi(3, (100, 1200), (100, 600), [255, 255, 255, 50])
-        self.voronoi = voronoi.Voronoi(self.width, self.layer_height, 3, 10)
+        self.voronoi = voronoi.Voronoi(self.width, self.layer_height, 30, 50)
         self.paused = False
         self.b_m = 0
 
@@ -173,7 +173,7 @@ class Map_maker(app.App):
         if self.gui.hovered:
             self.gui.cursor_hovered(self.cursor.pos)
         #if not self.paused: self.voronoi.increase_radii(.5)
-        self.voronoi.move_sweepline(self.b_m)
+        self.voronoi.move_sweepline(1)
         (x1, y1) = (0, self.voronoi.sweepline.y)
         (x2, y2) = (self.width, self.voronoi.sweepline.y)
         p = [x1,y1,x2,y2]
@@ -190,14 +190,14 @@ class Map_maker(app.App):
                 p2.extend(points)
         if p2 != []:
             self.b = pyglet.graphics.vertex_list(len(p2) //2 , ("v2f", p2), ("c3B", [255,0,0]*(len(p2)//2)))
-        for seed in self.voronoi.seeds[:1]:
+        for seed in self.voronoi.seeds[:]:
             for other_seed in seed.intersections:
-                i1, i2 = seed.intersections[other_seed]
-                c1 = shapes.Circle(i1, 5, 10)
-                c2 = shapes.Circle(i2, 5, 10)
-                p1.extend(c1.triangular_points)
-                p1.extend(c2.triangular_points)
-        self.a = pyglet.graphics.vertex_list(len(p1) //2 , ("v2f", p1), ("c3B", [255,0,0]*(len(p1)//2)))
+                i = seed.intersections[other_seed]
+                for inter in i:
+                    if inter != None:
+                        c = shapes.Circle(inter, 5, 10)
+                        p1.extend(c.triangular_points)
+        self.a = pyglet.graphics.vertex_list(len(p1) //2 , ("v2f", p1), ("c3B", [0, 255, 0] + [255,0,0]*(len(p1)//2-1)))
         self.v = pyglet.graphics.vertex_list(2, ("v2f", p), ("c3B", [255,0,0]*2))
 
     def update_cursor(self):
