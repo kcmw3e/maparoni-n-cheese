@@ -156,7 +156,7 @@ class Map_maker(app.App):
         self.clock.schedule(self.clock_ticked)
 
     def voronoi_setup(self):
-        self.voronoi_seeds_number = 50
+        self.voronoi_seeds_number = 10
         self.voronoi_seeds_padding = 10
         self.voronoi = voronoi.Voronoi(self.width, self.layer_height, self.voronoi_seeds_number, self.voronoi_seeds_padding)
 
