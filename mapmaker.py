@@ -27,15 +27,32 @@ class Map_maker(app.App):
                                ["Tree", "Spruce"],
                                ["Mountain", "Snowy"],
                                ["Hill"],
-                               ["Lake"] ]
+                               ["Lake"],
+                               ["House"] ]
+        self.voronoi_object_sets = [
+                                    [ ["Tree", "Oak"], ["Mountain"] ],
+                                    [ ["Tree", "Spruce"], ["Mountain", "Snowy"] ],
+                                    [ ["Tree", "Oak"], ["House"] ],
+                                    [ ["Tree", "Spruce"], ["House"] ],
+                                    [ ["Hill"] ],
+                                   ]
+
         self.oak_tree_leaf_color = [45, 112, 3]
         self.oak_tree_trunk_color = [112, 52, 3]
+
         self.spruce_tree_leaf_color = [29, 84, 24]
         self.spruce_tree_trunk_color = [94, 60, 2]
+
         self.rock_color = [112, 112, 112]
         self.snow_color = [255, 255, 255]
+
         self.hill_color = [33, 125, 26]
+
         self.lake_water_color = [0, 0, 180]
+
+        self.house_wall_color = [201, 116, 66]
+        self.house_door_color = [89, 68, 40]
+        self.house_roof_color = [77, 72, 65]
 
         self.layer_setup()
         self.clock_setup()
@@ -43,10 +60,11 @@ class Map_maker(app.App):
         self.gui_setup()
 
     def layer_setup(self):
-        self.layer_percent = 0.95
+        self.layer_percent = 0.9
         self.layer_width = self.width
         self.layer_height = self.height * self.layer_percent
         self.layer_color = [240, 194, 112]
+        self.layer_color = [136, 189, 23]
         self.layer = layer.Layer(self.layer_width, self.layer_height, self.layer_color)
 
     def cursor_setup(self):
@@ -54,6 +72,7 @@ class Map_maker(app.App):
 
     def gui_setup(self):
         self.gui_button_functions = [self.change_cursor_type, 
+                                     self.change_cursor_type,
                                      self.change_cursor_type,
                                      self.change_cursor_type,
                                      self.change_cursor_type,
@@ -86,6 +105,11 @@ class Map_maker(app.App):
                 "Map_obj"
             ],
             [
+                self.add_map_obj,
+                (self.cursor.get_pos, "House", None, True),
+                "Map_obj"
+            ],
+            [
                 
             ]
         ]
@@ -94,8 +118,10 @@ class Map_maker(app.App):
                                   "Mountain",
                                   "Hill",
                                   "Lake",
+                                  "House",
                                   "Random Map"]
         self.gui_button_label_colors = [ [255, 255, 255, 255],
+                                         [255, 255, 255, 255],
                                          [255, 255, 255, 255],
                                          [255, 255, 255, 255],
                                          [255, 255, 255, 255],
@@ -106,7 +132,15 @@ class Map_maker(app.App):
                                    [50, 112, 255],
                                    [50, 112, 255],
                                    [50, 112, 255],
+                                   [50, 112, 255],
                                    [50, 112, 255] ]
+        self.gui_button_hover_colors = [ [92, 39, 217],
+                                         [92, 39, 217],
+                                         [92, 39, 217],
+                                         [92, 39, 217],
+                                         [92, 39, 217],
+                                         [92, 39, 217],
+                                         [92, 39, 217] ]
         self.gui_width = self.width
         self.gui_height = self.height - self.layer_height
         self.gui_color = [220, 112, 50]
@@ -114,15 +148,16 @@ class Map_maker(app.App):
         self.gui = gui.GUI(self.gui_pos, self.gui_width, self.gui_height,
                            self.gui_color, self.gui_button_functions,
                            self.gui_button_parameters, self.gui_button_labels,
-                           self.gui_button_colors, self.gui_button_label_colors)
+                           self.gui_button_colors, self.gui_button_label_colors,
+                           self.gui_button_hover_colors)
 
     def clock_setup(self):
         self.clock = pyglet.clock.get_default()
         self.clock.schedule(self.clock_ticked)
 
     def voronoi_setup(self):
-        self.voronoi_seeds_number = 30
-        self.voronoi_seeds_padding = 80
+        self.voronoi_seeds_number = 50
+        self.voronoi_seeds_padding = 10
         self.voronoi = voronoi.Voronoi(self.width, self.layer_height, self.voronoi_seeds_number, self.voronoi_seeds_padding)
 
     def on_key_press(self, symbol, modifiers):
@@ -207,6 +242,15 @@ class Map_maker(app.App):
             if alpha:
                 lake_color.append(alpha_value)
             obj = map_obj.Lake(pos, 30, 30, lake_color)
+        elif obj_type == "House":
+            wall_color = copy.copy(self.house_wall_color)
+            door_color = copy.copy(self.house_door_color)
+            roof_color = copy.copy(self.house_roof_color)
+            if alpha:
+                wall_color.append(alpha_value)
+                door_color.append(alpha_value)
+                roof_color.append(alpha_value)
+            obj = map_obj.House(pos, 20, 15, wall_color, door_color, roof_color)
         return obj
 
     def generate_random_map(self):
@@ -226,18 +270,19 @@ class Map_maker(app.App):
             color = [r,g,b]
             #self.voronoi_batch.add(len(points) // 2, pyglet.gl.GL_LINES, None, ("v2f", points), ("c3B", len(points) // 2 * color))
             seed.polygon = polygon
-            seed.map_obj_type = random.choice(self.map_obj_types)
+            seed.map_obj_set = random.choice(self.voronoi_object_sets)
             seed.unpopulated = True
             self.populate_seed(seed)
 
     def populate_seed(self, seed):
         (min_x, max_x, min_y, max_y) = seed.polygon.get_maxs_and_mins()
-        for _ in range(1000):
-            x = random.randrange(int(min_x), int(max_x)+1)
-            y = random.randrange(int(min_y), int(max_y)+1)
+        for _ in range(300):
+            obj_type = random.choice(seed.map_obj_set)
+            x = random.randrange(int(min_x), int(max_x) + 1) #+1 in case euqal
+            y = random.randrange(int(min_y), int(max_y) + 1) #+1 in case euqal
             pos = (x, y)
             if seed.polygon.contains_point(pos):
-                self.add_map_obj(pos, *seed.map_obj_type)
+                self.add_map_obj(pos, *obj_type)
 
     def toggle_cursor_visibility(self, set_to = None):
         self.cursor.toggle_visibility(set_to)

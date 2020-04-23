@@ -2,7 +2,7 @@ import pyglet
 import shapes
 
 class GUI(object):
-    def __init__(self, pos, width, height, background_color, button_functions, button_parameters, button_labels, button_colors, button_label_colors):
+    def __init__(self, pos, width, height, background_color, button_functions, button_parameters, button_labels, button_colors, button_label_colors, button_hover_colors):
         self.pos = pos
         self.width = width
         self.height = height
@@ -16,12 +16,12 @@ class GUI(object):
         self.button_parameters = button_parameters
         self.button_labels = button_labels
         self.button_label_colors = button_label_colors
-        self.button_height = 20
-        self.button_width = 90
+        self.button_height = self.height * .7
+        self.button_width = 100
         self.button_padding = 20
         self.button_colors = button_colors
         self.button_border_color = [0, 0, 0]
-        self.button_hover_color = [100, 0, 80]
+        self.button_hover_colors = button_hover_colors
         self.batch_labels = pyglet.graphics.Batch()
 
         self.generate_buttons()
@@ -40,10 +40,11 @@ class GUI(object):
             label = self.button_labels[i]
             color = self.button_colors[i]
             label_color = self.button_label_colors[i]
+            hover_color = self.button_hover_colors[i]
             x = i * (self.button_width + self.button_padding) + self.button_width / 2 + self.button_padding
             y = self.pos[1]
             pos = (x, y)
-            b = Button(function, parameters, pos, label, self.button_width, self.button_height, color, self.button_border_color, self.button_hover_color)
+            b = Button(function, parameters, pos, label, self.button_width, self.button_height, color, self.button_border_color, hover_color)
             self.buttons.append(b)
             b.vertex_list = self.batch.add(len(b.shape.triangular_points) // 2, pyglet.gl.GL_TRIANGLES, None, b.vertices, b.vertices_colors)
             b.border_vertex_list = self.batch.add(len(b.shape.lines_points) // 2, pyglet.gl.GL_LINES, None, b.border_vertices, b.border_vertices_colors)

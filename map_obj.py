@@ -10,7 +10,7 @@ class Map_obj(object):
         self.height = height
         self.components = list()
         self.make_components()
-    
+
     def make_components(self):
         pass
 
@@ -31,7 +31,6 @@ class Map_obj(object):
     def draw(self):
         for component in self.components:
             component.vertex_list.draw(component.draw_type)
-
 
 class Tree(Map_obj):
     def __init__(self, pos, width, height, 
@@ -112,6 +111,41 @@ class Lake(Map_obj):
         shape = shapes.Simple_polygon(self.pos, angles, widths, radians = False)
         component = Component(shape, self.water_color, pyglet.gl.GL_POLYGON)
         self.components.append(component)
+
+class House(Map_obj):
+    def __init__(self, pos, width, height, wall_color, door_color, roof_color):
+        self.wall_color = wall_color
+        self.door_color = door_color
+        self.roof_color = roof_color
+        super().__init__(pos, width, height)
+    
+    def make_components(self):
+        self.make_walls()
+        self.make_roof()
+        self.make_door()
+
+    def make_walls(self):
+        height = self.height * .6
+        width = self.width * .75
+        offset = (0, height / 2)
+        rect = shapes.Rect(self.pos, width, height, offset)
+        wall = Component(rect, self.wall_color, pyglet.gl.GL_POLYGON)
+        self.components.append(wall)
+
+    def make_door(self):
+        height = self.height * .4
+        width = self.width * .2
+        offset = (0, height / 2)
+        rect = shapes.Rect(self.pos, width, height, offset)
+        door = Component(rect, self.door_color, pyglet.gl.GL_POLYGON)
+        self.components.append(door)
+    
+    def make_roof(self):
+        height = self.height * .4
+        offset = (0, self.height - height / 2)
+        tri = shapes.Iso_triangle(self.pos, self.width, height, offset)
+        roof = Component(tri, self.roof_color, pyglet.gl.GL_POLYGON)
+        self.components.append(roof)
 
 class Component(object):
     def __init__(self, shape, color, draw_type):
