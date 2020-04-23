@@ -49,7 +49,7 @@ class Tree(object):
                 for other_component in other.components:
                     if component.intersects(other_component):
                         return True
-            return False
+        return False
 
     def is_near(self, other):
         if abs(self.pos[0] - other.pos[0]) <= max(self.width, other.width) and abs(self.pos[1] - other.pos[1]) <= max(self.height, other.height):

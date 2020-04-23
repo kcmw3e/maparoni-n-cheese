@@ -18,7 +18,6 @@ class Component(object):
         self.draw_type = draw_type
         self.vertex_list = pyglet.graphics.vertex_list(self.number_of_points, self.vertices, self.vertices_colors)
 
-
     def intersects(self, other):
         if self.shape.intersects(other.shape):
             return True

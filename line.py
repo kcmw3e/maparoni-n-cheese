@@ -15,17 +15,17 @@ class Line(object):
 
     def __gt__(self, point):
         (x, y) = point
-        if y < self.output(x):
-            return True
+        if self.slope == None:
+            return self.x > x
         else:
-            return False
+            return self.output(x) > y
 
     def __lt__(self, point):
         (x, y) = point
-        if self.output(x) < y:
-            return True
+        if self.slope == None:
+            return self.x < x
         else:
-            return False
+            return self.output(x) < y
 
     def __repr__(self):
         return f"y = {self.slope} * (x - {self.x}) + {self.y}"

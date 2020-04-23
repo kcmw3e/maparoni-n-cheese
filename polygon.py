@@ -49,26 +49,24 @@ class Simple_polygon(object):
             self.points.append(point)
             self.flattened_points.extend([x, y])
 
-    def generate_trianglular_points(self): #for drawing the circle in triangles
+    def generate_trianglular_points(self): #for drawing the shape in triangles
         self.triangular_points = list()
         (x0, y0) = self.points[0]
-        for i in range(1, len(self.points)-1):
+        for i in range(1, len(self.points) - 1):
             (x1, y1) = self.points[i]
-            (x2, y2) = self.points[i+1]
+            (x2, y2) = self.points[i + 1]
             self.triangular_points.extend([x0, y0, x1, y1, x2, y2])
 
-    def generate_lines_points(self): #for drawing the circle in line loops
+    def generate_lines_points(self): #for drawing the shape in line loops
         self.lines_points = list()
         for i in range(len(self.points)):
-            if i + 1 < len(self.points):
-                j = i + 1
-            else:
-                j = 0
+            j = i - 1
             (x1, y1) = self.points[i]
             (x2, y2) = self.points[j]
             self.lines_points.extend([x1, y1, x2, y2])
 
-    def generate_perimeter_vectors(self): #generate the vectors from point to point around the perimeter
+    #generate the vectors from point to point around the perimeter
+    def generate_perimeter_vectors(self):
         vectors = list()
         for i in range(len(self.points)):
             j = i + 1
@@ -95,9 +93,11 @@ class Simple_polygon(object):
         for i in range(len(self.vectors)):
             j = i - 1
             v = self.vectors[i]
-            direction_to_point = (point[0] - v.beginning_point[0], point[1] - v.beginning_point[1])
-            vector_to_point = vector.Vector(v.beginning_point, direction_to_point)
-            previous_vector = self.vectors[j] #works when i is 0 because of negative indexing
+            direction_to_point = (point[0] - v.beginning_point[0],
+                                  point[1] - v.beginning_point[1])
+            vector_to_point = vector.Vector(v.beginning_point,
+                                            direction_to_point)
+            previous_vector = self.vectors[j] #negative index when i = 0
             angle = v.angle_to(vector_to_point)
             angle_to_previous = v.angle_to(previous_vector)
             if angle > angle_to_previous:
@@ -128,4 +128,20 @@ class Simple_polygon(object):
         self.angles = tuple(rotated_angles)
         self.generate_points()
         self.generate_trianglular_points()
+        self.generate_lines_points()
         self.generate_perimeter_vectors()
+    
+    def get_maxs_and_mins(self):
+        max_x = max_y = None
+        min_x = min_y = None
+        for point in self.points:
+            (x, y) = point
+            if max_x == None or x > max_x:
+                max_x = x
+            if min_x == None or x < min_x:
+                min_x = x
+            if max_y == None or x > max_y:
+                max_y = y
+            if min_y == None or y < min_y:
+                min_y = y
+        return (min_x, max_x, min_y, max_y)

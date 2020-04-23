@@ -1,3 +1,10 @@
+################################################################################
+#
+#   parabola.py
+#   Code by: Casey Walker
+#
+################################################################################
+
 import math
 import line
 
@@ -83,7 +90,7 @@ class Parabola(object):
                     return [p1]
 
             except:
-                return [] #changed from None
+                return []
         elif isinstance(other, line.Line):
             #solve: (s for self, o for other)
             #(1 / (4 * sp)) * (x - sh) ** 2 + sk = m * (x - oh) + ok
@@ -105,10 +112,10 @@ class Parabola(object):
                 y1 = self.output(x1)
                 x2 = (-b - math.sqrt(b ** 2 - 4 * (a * c))) / (2 * a)
                 y2 = self.output(x2)
-                
+
                 p1 = (x1, y1)
                 p2 = (x2, y2)
-                
+
                 if x1 != x2:
                     return [p1, p2]
                 else:
