@@ -6,7 +6,7 @@
 ################################################################################
 
 import math
-import line
+from line import Line
 
 class Vector(object):
     def __init__(self, pos, direction):
@@ -17,10 +17,13 @@ class Vector(object):
         self.terminating_point = (self.beginning_point[0] + self.direction[0], 
                                   self.beginning_point[1] + self.direction[1])
         self.magnitude = (self.direction[0] ** 2 + self.direction[1] ** 2) ** (1/2)
-        self.line = line.Line(pos, line.Line.find_slope(self.beginning_point, self.terminating_point))
+        self.line = Line(pos, Line.find_slope(self.beginning_point, self.terminating_point))
 
     def __repr__(self):
-        return f"Vector {(int(self.direction[0]), int(self.direction[1]))} at {(int(self.beginning_point[0]), int(self.beginning_point[1]))}"
+        return f"""\
+                Vector {(int(self.direction[0]),   int(self.direction[1]))} \
+                at {(int(self.beginning_point[0]), int(self.beginning_point[1]))} \
+                """
 
     @staticmethod
     def get_unit_vector(vector):
@@ -65,7 +68,7 @@ class Vector(object):
                 intersection = self.line.intersection(other.line)
                 if self.point_in_domain_and_range(intersection) and other.point_in_domain_and_range(intersection):
                     return True
-        elif isinstance(other, line.Line):
+        elif isinstance(other, Line):
             if self.line.intersects(other):
                 intersection = self.line.intersection(other)
                 if self.point_in_domain_and_range(intersection):
@@ -73,9 +76,9 @@ class Vector(object):
         return False
 
     def intersection(self, other):
-        if isinstance(other, line.Line):
-            if self.line.intersects(line):
-                intersection = self.line.intersection(line)
+        if isinstance(other, Line):
+            if self.line.intersects(other):
+                intersection = self.line.intersection(other)
                 if self.point_in_domain_and_range(intersection):
                     return intersection
             return None

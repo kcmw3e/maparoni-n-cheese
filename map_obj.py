@@ -23,10 +23,10 @@ class Map_obj(object):
         return False
 
     def is_near(self, other):
-        if abs(self.pos[0] - other.pos[0]) <= max(self.width, other.width) and abs(self.pos[1] - other.pos[1]) <= max(self.height, other.height):
-            return True
-        else:
-            return False
+        #takes max dimension of either object and tests if their positions
+        #are closer than 2x that distance (since 1x may not encompass the other)
+        distance = max(self.height, other.height, self.width, other.width) * 2
+        return shapes.Line.point_to_point(self.pos, other.pos) < distance
 
     def draw(self):
         for component in self.components:
@@ -49,10 +49,11 @@ class Tree(Map_obj):
 
     def make_leaves(self):
         self.leaves = list()
-        leaf_height = self.height*.9 / (self.number_of_leaves)
+        leaf_height = self.height*.9
         for i in range(self.number_of_leaves):
-            offset = (0, self.height - leaf_height * (i + 1) / 2)
-            t = shapes.Iso_triangle(self.pos, self.width, leaf_height * (i + 1), offset)
+            leaf_height = leaf_height * (1 - .1 * i)
+            offset = (0, self.height - leaf_height / 2)
+            t = shapes.Iso_triangle(self.pos, self.width, leaf_height, offset)
             l = Component(t, self.leaf_color, pyglet.gl.GL_POLYGON)
             self.leaves.append(l)
 
@@ -153,9 +154,14 @@ class Component(object):
         self.color = color
         self.number_of_points = len(self.shape.triangular_points) // 2
         self.vertices = ("v2f", self.shape.triangular_points)
-        self.vertices_colors = (f"c{len(self.color)}B", self.color * self.number_of_points)
+        self.vertices_colors = (f"c{len(self.color)}B",
+                                self.color * self.number_of_points)
+        
         self.draw_type = draw_type
-        self.vertex_list = pyglet.graphics.vertex_list(self.number_of_points, self.vertices, self.vertices_colors)
+
+        self.vertex_list = pyglet.graphics.vertex_list(self.number_of_points,
+                                                       self.vertices,
+                                                       self.vertices_colors)
 
     def intersects(self, other):
         if self.shape.intersects(other.shape):

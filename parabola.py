@@ -57,7 +57,7 @@ class Parabola(object):
     #code it for other things at the moment
     def intersections(self, other):
         if isinstance(other, Parabola):
-            #solve (s for self, o for other)
+            #solve: (s for self, o for other)
             #(1 / (4 * sp)) * (x - sh) ** 2 + sk = (1 / (4 * op)) * (x - oh) ** 2 + ok
             #use quadratic formula to solve (see a, b, c definitions below)
             #x = (-b [+-] sqrt(b ** 2 - 4 * (a * c))) / (2 * a)
