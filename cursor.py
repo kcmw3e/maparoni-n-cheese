@@ -10,6 +10,7 @@ class Cursor(object):
         self.img = None
         self.img_visibility = False
         self.type = None
+        self.selected = None
 
     def __call__(self, default = False):
         if default:
@@ -22,7 +23,7 @@ class Cursor(object):
             self.visibility = set_to
         else:
             self.visibility = not self.visibility
-    
+
     def toggle_img_visibility(self, set_to = None):
         if set_to != None:
             self.img_visibility = set_to
@@ -35,3 +36,8 @@ class Cursor(object):
     def draw(self):
         if self.img_visibility:
             self.img.draw()
+
+    def move(self, pos):
+        self.pos = pos
+        if self.selected != None:
+            self.selected.move(pos)

@@ -16,6 +16,7 @@ import gui
 import cursor
 import voronoi
 import map_obj
+import math
 
 class Map_maker(app.App):
     def __init__(self, width, height):
@@ -97,7 +98,8 @@ class Map_maker(app.App):
                                      self.change_cursor_type,
                                      self.change_cursor_type,
                                      self.generate_random_map,
-                                     self.clear_map]
+                                     self.clear_map,
+                                     self.change_cursor_type]
         #the arguments to be called in the functions ^^above^^
         self.gui_button_args = [ 
             [ self.add_map_obj, 
@@ -117,26 +119,32 @@ class Map_maker(app.App):
               "Map_obj" ],
 
             [ self.add_map_obj,
-              (self.cursor.get_pos, "Lake", None, True),
+              (self.cursor.get_pos, "House", None, True),
               "Map_obj" ],
 
-            [ self.add_map_obj,
-              (self.cursor.get_pos, "House", None, True),
-              "Map_obj"],
+            [ self.place_lake_node,
+              (self.cursor.get_pos, True),
+              "Lake_nodes" ],
 
             [ ],
 
-            [ ]
+            [ ],
+
+            [ self.select_obj,
+              (self.cursor.get_pos, True),
+              "Select" ]
         ]
         self.gui_button_labels = ["Oak Tree",
                                   "Spruce Tree",
                                   "Mountain",
                                   "Hill",
-                                  "Lake",
                                   "House",
+                                  "Lake",
                                   "Random Map",
-                                  "Clear Map"]
+                                  "Clear Map",
+                                  "Select"]
         self.gui_button_label_colors = [ [255, 255, 255, 255],
+                                         [255, 255, 255, 255],
                                          [255, 255, 255, 255],
                                          [255, 255, 255, 255],
                                          [255, 255, 255, 255],
@@ -152,7 +160,8 @@ class Map_maker(app.App):
                                          [50, 112, 255],
                                          [50, 112, 255],
                                          [50, 112, 255],
-                                         [70,  70,  70] ]
+                                         [70,  70,  70],
+                                         [50, 112, 255] ]
 
         self.gui_button_hover_colors = [ [92, 39, 211],
                                          [92, 39, 211],
@@ -161,7 +170,8 @@ class Map_maker(app.App):
                                          [92, 39, 211],
                                          [92, 39, 211],
                                          [214, 73, 200],
-                                         [245, 66, 72] ]
+                                         [245, 66, 72],
+                                         [92, 39, 211] ]
 
         self.gui_width = self.width
         self.gui_height = self.height - self.layer_height
@@ -191,43 +201,45 @@ class Map_maker(app.App):
     def on_key_press(self, symbol, modifiers):
         if symbol == key.ESCAPE:
             self.gui.show_help_menu(True)
+        elif symbol == key.DELETE and self.cursor.type == "Select":
+            self.cursor.selected.delete()
 
     def on_key_release(self, symbol, modifiers):
         if symbol == key.ESCAPE:
             self.gui.show_help_menu(False)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        super().on_mouse_scroll(x, y, scroll_x, scroll_y)
-        self.cursor.pos = (x, y)
-        self.scale += scroll_y
+        self.scale += scroll_y / 3 #div for smalling scroll increments
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
-        super().on_mouse_press(x, y, buttons, modifiers)
-        self.cursor() #call the function that cursor holds
+    def on_mouse_press(self, x, y, button, modifiers):
         if self.gui.hovered:
-            #to tell gui it should draw itself as hovered
-            self.gui.cursor_hovered(self.cursor_pos, clicked = True)
+            #to tell gui it is hovered and has been clicked
+            self.gui.cursor_hovered(self.cursor.pos, clicked = True)
+        else:
+            self.cursor() #call the function that cursor holds
 
     def on_mouse_motion(self, x, y, dx, dy):
-        super().on_mouse_motion(x, y, dx, dy)
-        self.cursor.pos = (x, y)
+        self.cursor.move((x, y))
         if self.gui.hovered:
             #to tell gui it should draw itself as hovered
             self.gui.cursor_hovered(self.cursor.pos)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        super().on_mouse_drag(x, y, dx, dy, buttons, modifiers)
-        self.cursor.pos = (x, y)
-        self.cursor() #call the function that cursor holds
+        self.cursor.move((x, y))
+        self.cursor.dragged = True
+        #self.cursor() #call the function that cursor holds
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        if self.cursor.dragged:
+            self.cursor.move((x, y))
+            self.layer.add_if_not_intersecting(self.cursor.selected)
+            self.cursor.dragged = False
 
     def on_draw(self):
-        super().on_draw()
+        self.clear()
         self.layer.draw()
-        self.gui.draw()
         self.cursor.draw()
-
-    def on_resize(self, width, height):
-        super().on_resize(width, height)
+        self.gui.draw()
 
     #from cursor is to know if pos is given as a function that returns a pos
     #or if pos is a tuple containing (x, y)
@@ -257,7 +269,7 @@ class Map_maker(app.App):
             if alpha:
                 leaf_color.append(alpha_value)
                 trunk_color.append(alpha_value)
-            obj = map_obj.Tree(pos, width, height, 
+            obj = map_obj.Tree(pos, width, height, self.layer,
                                leaf_color, trunk_color, leafs)
         elif obj_type == "Mountain":
             rock_color = copy.copy(self.mountain_rock_color)
@@ -270,7 +282,7 @@ class Map_maker(app.App):
             if alpha:
                 rock_color.append(alpha_value)
                 snow_color.append(alpha_value)
-            obj = map_obj.Mountain(pos, width, height,
+            obj = map_obj.Mountain(pos, width, height, self.layer,
                                    rock_color, snow, snow_color)
         elif obj_type == "Hill":
             hill_color = copy.copy(self.hill_color)
@@ -278,12 +290,12 @@ class Map_maker(app.App):
             height = self.hill_height * self.scale
             if alpha:
                 hill_color.append(alpha_value)
-            obj = map_obj.Hill(pos, width, height, hill_color)
+            obj = map_obj.Hill(pos, width, height, self.layer, hill_color)
         elif obj_type == "Lake":
             lake_color = copy.copy(self.lake_water_color)
             if alpha:
                 lake_color.append(alpha_value)
-            obj = map_obj.Lake(pos, 30, 30, lake_color)
+            obj = map_obj.Lake(pos, 30, 30, self.layer, lake_color)
         elif obj_type == "House":
             wall_color = copy.copy(self.house_wall_color)
             door_color = copy.copy(self.house_door_color)
@@ -294,13 +306,12 @@ class Map_maker(app.App):
                 wall_color.append(alpha_value)
                 door_color.append(alpha_value)
                 roof_color.append(alpha_value)
-            obj = map_obj.House(pos, width, height, wall_color, door_color, roof_color)
+            obj = map_obj.House(pos, width, height, self.layer, wall_color, door_color, roof_color)
         return obj
 
     def generate_random_map(self):
         self.voronoi_setup()
         self.voronoi.solve()
-        self.voronoi_batch = pyglet.graphics.Batch()
         self.populate_voronoi()
 
     def populate_voronoi(self):
@@ -312,7 +323,7 @@ class Map_maker(app.App):
             self.populate_seed(seed)
 
     def populate_seed(self, seed):
-        (min_x, max_x, min_y, max_y) = seed.polygon.get_maxs_and_mins()
+        (min_x, max_x, min_y, max_y) = seed.polygon.get_maxs_mins()
         for _ in range(300):
             obj_type = random.choice(seed.map_obj_set)
             x = random.randrange(int(min_x), int(max_x) + 1) #+1 in case euqal
@@ -320,6 +331,19 @@ class Map_maker(app.App):
             pos = (x, y)
             if seed.polygon.contains_point(pos):
                 self.add_map_obj(pos, *obj_type)
+
+    def place_lake_node(self, pos, from_cursor = False):
+        if from_cursor:
+            pos = pos()
+        self.lake_nodes.append(pos)
+
+    def select_obj(self, pos, from_cursor = False):
+        if from_cursor:
+            pos = pos()
+        obj = self.layer.get_obj_at_pos(pos)
+        self.cursor.selected = obj
+        self.layer.remove_obj(obj)
+        obj.show_box(True)
 
     def clear_map(self):
         self.layer_setup() #layer setup will just re-make the layer and regions
@@ -346,6 +370,12 @@ class Map_maker(app.App):
             self.cursor.img = self.make_map_obj(*self.cursor.args[:-1], 
                                                 alpha = True, alpha_value = 112,
                                                 from_cursor = True)
+        elif self.cursor.type == "Lake_nodes":
+            self.cursor.toggle_img_visibility(False)
+            self.toggle_cursor_visibility(True)
+        elif self.cursor.type == "Select":
+            self.cursor.toggle_img_visibility(False)
+            self.toggle_cursor_visibility(True)
 
     def change_cursor_type(self, function, args, cursor_type):
         self.cursor.function = function

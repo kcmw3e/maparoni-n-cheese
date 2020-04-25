@@ -6,7 +6,6 @@
 ################################################################################
  
 import shapes
-import component
 import pyglet
 import random
 import math

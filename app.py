@@ -15,7 +15,7 @@ class App(pyglet.window.Window):
         config = pyglet.gl.Config(sample_buffers = 1, samples = 8,
                                   double_buffer = True)
 
-        super(App, self).__init__(config = config, resizable = True,
+        super(App, self).__init__(config = config, resizable = False,
                                   width = width, height = height)
 
         #from: 
@@ -38,23 +38,3 @@ class App(pyglet.window.Window):
         pyglet.gl.glOrtho(0, width, 0, height, -1, 1)
         pyglet.gl.glMatrixMode(pyglet.gl.GL_MODELVIEW)
         ########################################################################
-
-    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        self.cursor_pos = (x, y) #update cursor position
-
-    def on_mouse_press(self, x, y, buttons, modifiers):
-        self.cursor_pos = (x, y) #update cursor position
-
-    def on_mouse_motion(self, x, y, dx, dy):
-        self.cursor_pos = (x, y) #update cursor position
-        self.moved_pos = (dx, dy) #update change in position
-        self.previous_pos = (self.cursor_pos[0] - dx, self.cursor_pos[1] - dy)
-
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        #update cursor position (in case it wasn't by motion/drag)
-        self.cursor_pos = (x, y)
-        self.cursor_rel = (dx, dy) #update change in position
-        self.previous_pos = (self.cursor_pos[0] - dx, self.cursor_pos[1] - dy)
-
-    def on_draw(self):
-        self.clear()

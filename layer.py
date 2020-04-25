@@ -1,6 +1,7 @@
 import pyglet
+from pyglet.gl import GL_TRIANGLES
 import shapes
-import component
+import map_obj
 
 class Layer(object):
     def __init__(self, width, height, color, region_width = 300, region_height = 300):
@@ -9,12 +10,16 @@ class Layer(object):
         self.color = color
         self.region_width = region_width
         self.region_height = region_height
+        self.batch = pyglet.graphics.Batch()
         self.generate_background()
         self.generate_regions()
 
     def generate_background(self):
         self.shape = shapes.Rect((self.width / 2, self.height / 2), self.width, self.height)
-        self.background = component.Component(self.shape, self.color, pyglet.gl.GL_POLYGON)
+        self.num_points = len(self.shape.triangular_points) // 2
+        self.background_vertices = ("v2f", self.shape.triangular_points)
+        self.background_vertices_colors = (f"c{len(self.color)}B", self.color * self.num_points)
+        self.background = self.batch.add(self.num_points, GL_TRIANGLES, None, self.background_vertices, self.background_vertices_colors)
 
     def generate_regions(self):
         self.regions = list()
@@ -31,7 +36,7 @@ class Layer(object):
                 else:
                     height = self.height - total_height
                 pos = (x + width / 2, y + height / 2)
-                region = Region(pos, width, height)
+                region = Region(pos, width, height, self)
                 self.regions.append(region)
                 total_height += height
                 y += height
@@ -41,59 +46,68 @@ class Layer(object):
             y = 0
 
     def get_region_at_pos(self, pos):
-        (x, y) = pos
-        regions_row = y // self.region_height
-        regions_col = x // self.region_width
-        return self.regions[regions_row][regions_col]
-
-    def add(self, map_object):
         for region in self.regions:
-            if region.object_in_region(map_object):
-                region.add(map_object)
+            if region.shape.contains_point(pos):
+                return region
 
-    def add_if_not_intersecting(self, map_object):
+    def get_obj_at_pos(self, pos):
+        region = self.get_region_at_pos(pos)
+        return region.get_obj_at_pos(pos)
+
+    def add(self, map_obj):
         for region in self.regions:
-            if region.object_in_region(map_object):
-                if region.objects_in_region_intersect(map_object):
+            if region.object_in_region(map_obj):
+                region.add(map_obj)
+        map_obj.place()
+
+    def add_if_not_intersecting(self, map_obj):
+        for region in self.regions:
+            if region.object_in_region(map_obj):
+                if region.objects_in_region_intersect(map_obj):
                     return False
-        self.add(map_object)
+        self.add(map_obj)
         return True
 
-    def draw(self):
-        self.background.vertex_list.draw(self.background.draw_type)
+    def remove_obj(self, map_obj):
         for region in self.regions:
-            region.draw()
+            if map_obj in region.objects:
+                region.objects.remove(map_obj)
+
+    def draw(self):
+        #self.background.vertex_list.draw(self.background.draw_type)
+        self.batch.draw()
 
 class Region(object):
-    def __init__(self, pos, width, height):
-        self.batch = pyglet.graphics.Batch()
+    def __init__(self, pos, width, height, parent):
         self.pos = pos
         self.width = width
         self.height = height
         self.objects = set()
         self.shape = shapes.Rect(self.pos, self.width, self.height)
-        self.vertex_list = pyglet.graphics.vertex_list(4, ("v2f", self.shape.flattened_points), ("c3B", [100, 100, 100] * 4))
+        self.num_points = len(self.shape.lines_points) // 2
+        self.vertex_list = parent.batch.add(self.num_points, pyglet.gl.GL_LINES, None, ("v2f", self.shape.lines_points), ("c3B", [100, 100, 100] * self.num_points))
 
     def __repr__(self):
         return f"Region ({self.width, self.height}) at {self.pos}"
 
-    def add(self, map_object):
-        self.objects.add(map_object)
-        for component in map_object.components:
-            self.batch.add(component.number_of_points, pyglet.gl.GL_TRIANGLES, None, component.vertices, component.vertices_colors)
+    def add(self, map_obj):
+        self.objects.add(map_obj)
  
-    def object_in_region(self, map_object):
-        for component in map_object.components:
-            if component.intersects(self):
+    def object_in_region(self, map_obj):
+        for component in map_obj.components:
+            if component.for_collision and component.intersects(self):
                 return True
         return False
 
-    def draw(self):
-        self.vertex_list.draw(pyglet.gl.GL_LINE_LOOP)
-        self.batch.draw()
-
-    def objects_in_region_intersect(self, map_object):
+    def objects_in_region_intersect(self, map_obj):
         for obj in self.objects:
-            if obj.intersects(map_object):
+            if obj.intersects(map_obj):
                 return True
         return False
+
+    def get_obj_at_pos(self, pos):
+        for obj in self.objects:
+            for component in obj.components:
+                if component.shape.contains_point(pos):
+                    return obj
+        return None

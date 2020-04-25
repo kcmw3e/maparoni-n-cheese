@@ -28,6 +28,9 @@ class Simple_polygon(object):
         self.widths = tuple(widths) #contains the distances to each point
         self.radians = radians
         self.rotation = rotation
+        self.setup()
+    
+    def setup(self):
         self.generate_points()
         self.generate_trianglular_points()
         self.generate_lines_points()
@@ -131,7 +134,11 @@ class Simple_polygon(object):
         self.generate_lines_points()
         self.generate_perimeter_vectors()
     
-    def get_maxs_and_mins(self):
+    def move(self, pos):
+        self.pos = pos
+        self.setup()
+
+    def get_maxs_mins(self):
         max_x = max_y = None
         min_x = min_y = None
         for point in self.points:
@@ -140,7 +147,7 @@ class Simple_polygon(object):
                 max_x = x
             if min_x == None or x < min_x:
                 min_x = x
-            if max_y == None or x > max_y:
+            if max_y == None or y > max_y:
                 max_y = y
             if min_y == None or y < min_y:
                 min_y = y
