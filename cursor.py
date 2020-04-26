@@ -1,3 +1,4 @@
+import pyglet
 
 class Cursor(object):
     def __init__(self, default_function, default_args):
@@ -11,6 +12,7 @@ class Cursor(object):
         self.img_visibility = False
         self.type = None
         self.selected = None
+        self.batch = pyglet.graphics.Batch()
 
     def __call__(self, default = False):
         if default:
@@ -34,10 +36,14 @@ class Cursor(object):
         return self.pos
 
     def draw(self):
-        if self.img_visibility:
-            self.img.draw()
+        self.batch.draw()
 
-    def move(self, pos):
-        self.pos = pos
+    def delete_selected(self):
+        self.selected.delete()
+        self.selected = None
+
+    def move(self, dx, dy):
+        (x, y) = self.pos
+        self.pos = (x + dx, y + dy)
         if self.selected != None:
-            self.selected.move(pos)
+            self.selected.move(dx, dy)

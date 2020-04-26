@@ -58,7 +58,6 @@ class Layer(object):
         for region in self.regions:
             if region.object_in_region(map_obj):
                 region.add(map_obj)
-        map_obj.place()
 
     def add_if_not_intersecting(self, map_obj):
         for region in self.regions:
@@ -74,8 +73,16 @@ class Layer(object):
                 region.objects.remove(map_obj)
 
     def draw(self):
-        #self.background.vertex_list.draw(self.background.draw_type)
         self.batch.draw()
+    
+    def toggle_grid(self, show):
+        if show:
+            visibility = 255
+        else:
+            visibility = 0
+        for region in self.regions:
+            region.change_visibility(visibility)
+
 
 class Region(object):
     def __init__(self, pos, width, height, parent):
@@ -85,7 +92,7 @@ class Region(object):
         self.objects = set()
         self.shape = shapes.Rect(self.pos, self.width, self.height)
         self.num_points = len(self.shape.lines_points) // 2
-        self.vertex_list = parent.batch.add(self.num_points, pyglet.gl.GL_LINES, None, ("v2f", self.shape.lines_points), ("c3B", [100, 100, 100] * self.num_points))
+        self.vertex_list = parent.batch.add(self.num_points, pyglet.gl.GL_LINES, None, ("v2f", self.shape.lines_points), ("c4B", [100, 100, 100, 0] * self.num_points))
 
     def __repr__(self):
         return f"Region ({self.width, self.height}) at {self.pos}"
@@ -111,3 +118,7 @@ class Region(object):
                 if component.shape.contains_point(pos):
                     return obj
         return None
+
+    def change_visibility(self, visibility):
+        for i in range(3, len(self.vertex_list.colors), 4):
+            self.vertex_list.colors[i] = visibility

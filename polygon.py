@@ -83,6 +83,15 @@ class Simple_polygon(object):
             vectors += [vector.Vector(point1, direction)]
         self.vectors = tuple(vectors)
 
+    def scale(self, dwidth):
+        dwidth = 2 ** dwidth
+        widths = list()
+        for width in self.widths:
+            width *= dwidth
+            widths.append(width)
+        self.widths = tuple(widths)
+        self.setup()
+
     def intersects(self, other):
         for point in other.points:
             if self.contains_point(point):
@@ -134,8 +143,9 @@ class Simple_polygon(object):
         self.generate_lines_points()
         self.generate_perimeter_vectors()
     
-    def move(self, pos):
-        self.pos = pos
+    def move(self, dx, dy):
+        (x, y) = self.pos
+        self.pos = (x + dx, y + dy)
         self.setup()
 
     def get_maxs_mins(self):
