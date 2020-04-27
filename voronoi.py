@@ -163,11 +163,9 @@ class Voronoi_seed(object):
         for (x2, y2) in points:
             dx = x2 - x1
             dy = y2 - y1
-            #angle = math.tan(dy/dx)
             v = shapes.Vector(self.pos, (dx, dy))
             angle = v.angle
             width = v.magnitude
-            #width = shapes.Line.point_to_point((x1, y1), (x2, y2))
             angles.append(angle)
             widths.append(width)
         polygon = shapes.Simple_polygon(self.pos, angles, widths)

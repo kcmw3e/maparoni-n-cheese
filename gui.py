@@ -4,8 +4,8 @@ import shapes
 
 class GUI(object):
     def __init__(self, pos, width, height, background_color,
-                 button_functions, button_args, button_labels,
-                 button_colors, button_label_colors, button_hover_colors):
+                 button_colors, button_hover_colors, button_label_colors,
+                 button_labels, button_functions, button_args):
         self.pos = pos
         self.width = width
         self.height = height
@@ -34,7 +34,7 @@ class GUI(object):
         self.background_num_points = len(self.background_shape.triangular_points) // 2
 
         self.background_vertices = ("v2f", self.background_shape.triangular_points)
-        self.background_vertices_colors = (f"c{len(self.background_color)}B",
+        self.background_vertices_colors = (f"c4B",
                                            self.background_color * self.background_num_points)
 
         self.background = self.batch.add(self.background_num_points, GL_TRIANGLES,
@@ -76,17 +76,21 @@ class GUI(object):
                                         anchor_x = 'center', anchor_y = 'center',
                                         batch = self.batch_labels, color = label_color)
 
-    def has_cursor(self, cursor_pos):
-        return self.background_shape.contains_point(cursor_pos)
+    def check_hovered(self, cursor_pos):
+        if self.background_shape.contains_point(cursor_pos):
+            self.hovered = True
+            self.cursor_hovered(cursor_pos)
+        else:
+            self.hovered = False
 
-    def cursor_hovered(self, cursor_pos, clicked = False):
+    def cursor_hovered(self, cursor_pos):
         for button in self.buttons:
-            if button.shape.contains_point(cursor_pos):
-                button.hovered()
-                if clicked:
-                    button()
-            else:
-                button.unhovered()
+            button.check_hovered(cursor_pos)
+
+    def clicked(self):
+        for button in self.buttons:
+            if button.is_hovered:
+                button()
 
     def show_help_menu(self, show):
         pass
@@ -122,6 +126,14 @@ class Button(object):
 
     def __call__(self):
         self.function(*self.args)
+
+    def check_hovered(self, cursor_pos):
+        if self.shape.contains_point(cursor_pos):
+            self.is_hovered = True
+            self.hovered()
+        else:
+            self.is_hovered = False
+            self.unhovered()
 
     def hovered(self):
         self.vertex_list.colors = self.hover_color * self.num_points

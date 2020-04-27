@@ -5,11 +5,10 @@ import shapes
 import random
 
 class Map_obj(object):
-    def __init__(self, pos, width, height, box_color = (252, 35, 35, 0)):
+    def __init__(self, pos, width, height):
         self.pos = pos
         self.width = width
         self.height = height
-        self.box_color = list(box_color)
         self.setup()
 
     def setup(self):
@@ -71,10 +70,13 @@ class Map_obj(object):
             component.move(dx, dy)
 
     def scale(self, dsize):
-        self.delete()
         for component in self.components:
             component.scale(dsize)
-        self.place(self.parent_batch)
+        points = list()
+        for component in self.components:
+            component_points = component.shape.triangular_points
+            points.extend(component_points)
+        self.vertex_list.vertices = points
 
     def migrate(self, parent_batch):
         old_parent_batch = self.parent_batch

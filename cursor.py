@@ -1,36 +1,38 @@
 import pyglet
 
 class Cursor(object):
-    def __init__(self, default_function, default_args):
+    empty_function = lambda: None
+    def __init__(self, parent):
+        self.parent = parent
         self.pos = (0, 0)
-        self.default_function = default_function
-        self.default_args = default_args
-        self.function = self.default_function
-        self.args = self.default_args
+        self.function = Cursor.empty_function
+        self.args = [ ]
         self.visibility = True
         self.img = None
-        self.img_visibility = False
         self.type = None
         self.selected = None
+        self.call_default = True
+        self.dragged = False
         self.batch = pyglet.graphics.Batch()
 
-    def __call__(self, default = False):
-        if default:
+    def __call__(self):
+        if self.call_default:
             self.default_function(*self.default_args)
-        elif self.function != None:
+        elif self.function != Cursor.empty_function:
             self.function(*self.args)
-    
+
+    def toggle_call_default(self, set_to = None):
+        if set_to != None:
+            self.call_default = set_to
+        else:
+            self.call_default = not self.call_default
+
     def toggle_visibility(self, set_to = None):
         if set_to != None:
             self.visibility = set_to
         else:
             self.visibility = not self.visibility
-
-    def toggle_img_visibility(self, set_to = None):
-        if set_to != None:
-            self.img_visibility = set_to
-        else:
-            self.img_visibility = not self.img_visibility
+        self.parent.set_mouse_visible(self.visibility)
 
     def get_pos(self):
         return self.pos
@@ -47,3 +49,7 @@ class Cursor(object):
         self.pos = (x + dx, y + dy)
         if self.selected != None:
             self.selected.move(dx, dy)
+
+    def set_default(self, function, args):
+        self.default_function = function
+        self.default_args = args
