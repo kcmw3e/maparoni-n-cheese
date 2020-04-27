@@ -17,6 +17,7 @@ class Voronoi(object):
         self.number_of_seeds = number_of_seeds
         self.seed_padding = seed_padding
         self.sweepline_height = 0
+        self.sweepline_step = 1
         self.sweepline = shapes.Line((0, self.sweepline_height), 0)
         if self.generate_seed_points():
             self.generate_seeds()
@@ -64,7 +65,19 @@ class Voronoi(object):
 
     def solve(self):
         while self.sweepline_height < self.height * 1.75:
-            self.move_sweepline(1)
+            self.move_sweepline(self.sweepline_step)
+
+    def solve_visually(self):
+        if self.sweepline_height > self.height * 1.75:
+            return None
+        else:
+            self.move_sweepline(self.sweepline_step)
+            seed_points = list()
+            for seed in self.seeds:
+                if seed.active:
+                    points = seed.poll_flattened_points()
+                    seed_points.extend(points)
+            return seed_points
 
     def move_sweepline(self, dy):
         self.sweepline_height += dy
@@ -142,18 +155,22 @@ class Voronoi_seed(object):
                     points.append(intersection)
         if len(points) == 0:
             return []
-        points = ordered(self.pos, points)
-        return points
+        else:
+            points = ordered(self.pos, points)
+            return points
     
     def poll_flattened_points(self):
         points = self.poll_points()
-        (x1, y1) = points[0]
-        ordered_flattened_points = [x1, y1]
-        for point in points[1:]:
-            (x, y) = point
-            ordered_flattened_points.extend([x, y] * 2)
-        ordered_flattened_points.extend([x1, y1])
-        return ordered_flattened_points
+        if len(points) == 0:
+            return [ ]
+        else:
+            (x1, y1) = points[0]
+            ordered_flattened_points = [x1, y1]
+            for point in points[1:]:
+                (x, y) = point
+                ordered_flattened_points.extend([x, y] * 2)
+            ordered_flattened_points.extend([x1, y1])
+            return ordered_flattened_points
 
     def get_polygon(self):
         angles = list()

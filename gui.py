@@ -4,8 +4,11 @@ import shapes
 
 class GUI(object):
     def __init__(self, pos, width, height, background_color,
-                 button_colors, button_hover_colors, button_label_colors,
-                 button_labels, button_functions, button_args):
+                 button_width, button_height, button_padding,
+                 button_colors, button_hover_colors,
+                 button_label_colors, button_labels, font_size, font,
+                 button_functions, button_args):
+
         self.pos = pos
         self.width = width
         self.height = height
@@ -14,15 +17,15 @@ class GUI(object):
         self.generate_background()
         self.hovered = False
 
-        self.font = "Times New Roman"
-        self.font_size = 12
+        self.font = font
+        self.font_size = font_size
         self.button_functions = button_functions
         self.button_args = button_args
         self.button_labels = button_labels
         self.button_label_colors = button_label_colors
-        self.button_height = self.height * .7
-        self.button_width = 100
-        self.button_padding = 20
+        self.button_height = button_height
+        self.button_width = button_width
+        self.button_padding = button_padding
         self.button_colors = button_colors
         self.button_border_color = [0, 0, 0]
         self.button_hover_colors = button_hover_colors

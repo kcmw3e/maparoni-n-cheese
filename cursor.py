@@ -1,11 +1,11 @@
 import pyglet
 
 class Cursor(object):
-    empty_function = lambda: None
+    empty_fn = lambda: None
     def __init__(self, parent):
         self.parent = parent
         self.pos = (0, 0)
-        self.function = Cursor.empty_function
+        self.function = Cursor.empty_fn
         self.args = [ ]
         self.visibility = True
         self.img = None
@@ -18,7 +18,7 @@ class Cursor(object):
     def __call__(self):
         if self.call_default:
             self.default_function(*self.default_args)
-        elif self.function != Cursor.empty_function:
+        elif self.function != Cursor.empty_fn:
             self.function(*self.args)
 
     def toggle_call_default(self, set_to = None):

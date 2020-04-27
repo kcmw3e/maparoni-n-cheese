@@ -7,27 +7,34 @@
 
 import pyglet
 import app
-import shapes
 import layer
-import copy
 import random
 from pyglet.window import key
 import gui
 import cursor
 import voronoi
 import map_obj
-import math
 
 class Map_maker(app.App):
     def __init__(self, width, height):
         super().__init__(width, height)
         self.setup()
 
+    #The following is consistent of setup functions. Most of them are called on
+    #startup, and some may be called throughout the use of the program to
+    #reset a portion of the map or program. It also contains values such as
+    #colors and other parameters that can be changed/customized for a different
+    #look/feel to the program (namely colors, widths, heights, etc)
+    ############################################################################
     def setup(self):
+        self.clock_setup()
         self.obj_setup()
         self.layer_setup()
         self.cursor_setup()
         self.gui_setup()
+
+    def clock_setup(self):
+        self.clock = pyglet.clock.get_default()
 
     def obj_setup(self):
         #These are all of the sets of arguments for "object_type" and
@@ -57,7 +64,7 @@ class Map_maker(app.App):
         #The following are parameters for creating the map objects. They can
         #be easily changed to modify the look and colors of objects.
         #Colors are ALWAYS a list of 4 integers (0-255) --> [r, g, b, a]
-        ########################################################################
+        #======================================================================#
         self.oak_tree_leaf_color =  [45, 112, 3, 255]
         self.oak_tree_trunk_color = [112, 52, 3, 255]
         self.oak_tree_leaves = 1
@@ -86,7 +93,9 @@ class Map_maker(app.App):
         self.house_roof_color = [80, 70, 65, 255]
         self.house_width = 10
         self.house_height = 10
-        ########################################################################
+        
+        self.show_generation = False
+        #======================================================================#
 
     def layer_setup(self):
         self.layer_height_percent = 0.9 #used for ratio in layer-gui making
@@ -105,6 +114,8 @@ class Map_maker(app.App):
                                  self.layer_color,
                                  self.layer_region_width,
                                  self.layer_region_height)
+        self.voronoi_gen_borders = None
+        self.voronoi_gen_borders_color = [0, 0, 0, 255]
 
     def cursor_setup(self):
         #Cursor is used for selcting/moving/placing objects by holding a 
@@ -119,9 +130,19 @@ class Map_maker(app.App):
     def gui_setup(self):
         #Gui is a bar at the top of the screen with the buttons listed below
         #(that call the functions listed below).
+        self.gui_width = self.width
+        self.gui_height = self.height - self.layer_height
+        self.gui_color = [220, 112, 50, 255]
 
-        #The functions for each button to call when pressed
-        #(indices are parallel to the rest of the button parameters).
+        #Pos defines the center x and y of the gui rectangle.
+        self.gui_pos = (self.width / 2, self.height - self.gui_height / 2)
+
+        #The following contains all the contstruction properties of the gui
+        #buttons. It is consistent of button call functions, parameters, colors
+        #labels, and width/height.
+        #======================================================================#
+        # The functions for each button to call when pressed
+        # (indices are parallel to the rest of the button parameters).
         self.gui_button_functions = [self.change_cursor_type, 
                                      self.change_cursor_type,
                                      self.change_cursor_type,
@@ -133,8 +154,8 @@ class Map_maker(app.App):
                                      self.change_cursor_type,
                                      self.toggle_grid]
 
-        #The arguments to be called in the ^^above^^ functions
-        #(empty list implies no arguments).
+        # The arguments to be called in the ^^above^^ functions
+        # (empty list implies no arguments).
         self.gui_button_args = [ 
             [ self.add_map_obj, 
               (self.cursor.get_pos, "Tree", "Oak", True),
@@ -171,7 +192,7 @@ class Map_maker(app.App):
             [ ]
         ]
 
-        #The text that shows on each button.
+        # The text that shows on each button.
         self.gui_button_labels = ["Oak Tree",
                                   "Spruce Tree",
                                   "Mountain",
@@ -194,19 +215,19 @@ class Map_maker(app.App):
                                          [255, 255, 255, 255],
                                          [255, 255, 255, 255] ]
 
-        #Color displayed when NOT hovered.
-        self.gui_button_colors = [       [50, 112, 255, 255],
-                                         [50, 112, 255, 255],
-                                         [50, 112, 255, 255],
-                                         [50, 112, 255, 255],
-                                         [50, 112, 255, 255],
-                                         [50, 112, 255, 255],
-                                         [50, 112, 255, 255],
-                                         [70,  70,  70, 255],
-                                         [50, 112, 255, 255],
-                                         [50, 112, 255, 255] ]
+        # Color displayed when NOT hovered.
+        self.gui_button_colors = [       [ 50, 112, 255, 255],
+                                         [ 50, 112, 255, 255],
+                                         [ 50, 112, 255, 255],
+                                         [ 50, 112, 255, 255],
+                                         [ 50, 112, 255, 255],
+                                         [ 50, 112, 255, 255],
+                                         [ 50, 112, 255, 255],
+                                         [ 70,  70,  70, 255],
+                                         [ 50, 112, 255, 255],
+                                         [ 50, 112, 255, 255] ]
 
-        #Color displayed WHEN hovered.
+        # Color displayed WHEN hovered.
         self.gui_button_hover_colors = [ [ 90, 40, 200, 255],
                                          [ 90, 40, 200, 255],
                                          [ 90, 40, 200, 255],
@@ -218,18 +239,21 @@ class Map_maker(app.App):
                                          [ 90, 40, 200, 255],
                                          [ 90, 40, 200, 255] ]
 
-        self.gui_width = self.width
-        self.gui_height = self.height - self.layer_height
-        self.gui_color = [220, 112, 50, 255]
-
-        #Pos defines the center x and y of the gui rectangle.
-        self.gui_pos = (self.width / 2, self.height - self.gui_height / 2)
+        self.gui_button_numbers = len(self.gui_button_labels)
+        self.gui_button_padding = 5
+        self.gui_button_height = self.gui_height * .7
+        self.gui_button_width = (((self.gui_width - self.gui_button_padding) / 
+                                   self.gui_button_numbers) - 
+                                   self.gui_button_padding)
+        self.gui_button_label_font_size = 14
+        self.gui_button_label_font = "Arail"
+        #======================================================================#
 
         self.gui = gui.GUI(self.gui_pos, self.gui_width, self.gui_height,
-                           self.gui_color,
+                           self.gui_color, self.gui_button_width, self.gui_button_height, self.gui_button_padding,
                            self.gui_button_colors, self.gui_button_hover_colors,
                            self.gui_button_label_colors,
-                           self.gui_button_labels,
+                           self.gui_button_labels, self.gui_button_label_font_size, self.gui_button_label_font,
                            self.gui_button_functions, self.gui_button_args)
 
     def voronoi_setup(self):
@@ -239,10 +263,11 @@ class Map_maker(app.App):
         #a diagram may fail to be created.
         self.voronoi_seeds_number = 10
         self.voronoi_seeds_padding = 80
-        self.voronoi_population_attempts = 100 #(see populate_seed for use)
+        self.voronoi_population_attempts = 300 #(see populate_seed for use)
         self.voronoi = voronoi.Voronoi(self.width, self.layer_height,
                                        self.voronoi_seeds_number, 
                                        self.voronoi_seeds_padding)
+    ############################################################################
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.H:
@@ -250,8 +275,9 @@ class Map_maker(app.App):
         elif symbol == key.DELETE and self.cursor.type == "Select":
             self.cursor.delete_selected()
         elif symbol == key.ESCAPE:
-            self.change_cursor_type(cursor.Cursor.empty_function, None,
-                                    "Default")
+            self.change_cursor_type(cursor.Cursor.empty_fn, None, "Default")
+        elif symbol == key.S:
+            self.show_generation = not self.show_generation
 
     def on_key_release(self, symbol, modifiers):
         if symbol == key.H:
@@ -304,6 +330,10 @@ class Map_maker(app.App):
             self.layer_grid_visibility = set_to
 
         self.layer.toggle_grid(self.layer_grid_visibility)
+        if self.layer_grid_visibility:
+            if self.voronoi_gen_borders != None:
+                self.voronoi_gen_borders.delete()
+                self.voronoi_gen_borders = None
 
     #from cursor is to know if pos is given as a function that returns a pos
     #or if pos is a tuple containing (x, y)
@@ -321,14 +351,14 @@ class Map_maker(app.App):
             pos = pos()
         if obj_type == "Tree":
             if obj_subtype == "Oak":
-                leaf_color = copy.copy(self.oak_tree_leaf_color)
-                trunk_color = copy.copy(self.oak_tree_trunk_color)
+                leaf_color = list(self.oak_tree_leaf_color)
+                trunk_color = list(self.oak_tree_trunk_color)
                 leafs = self.oak_tree_leaves
                 width = self.oak_tree_width * self.scale
                 height = self.oak_tree_height * self.scale
             elif obj_subtype == "Spruce":
-                leaf_color = copy.copy(self.spruce_tree_leaf_color)
-                trunk_color = copy.copy(self.spruce_tree_trunk_color)
+                leaf_color = list(self.spruce_tree_leaf_color)
+                trunk_color = list(self.spruce_tree_trunk_color)
                 leafs = self.spruce_tree_leaves
                 width = self.spruce_tree_width * self.scale
                 height = self.spruce_tree_height * self.scale
@@ -338,8 +368,8 @@ class Map_maker(app.App):
             obj = map_obj.Tree(pos, width, height,
                                leaf_color, trunk_color, leafs)
         elif obj_type == "Mountain":
-            rock_color = copy.copy(self.mountain_rock_color)
-            snow_color = copy.copy(self.mountain_snow_color)
+            rock_color = list(self.mountain_rock_color)
+            snow_color = list(self.mountain_snow_color)
             width = self.mountain_width * self.scale
             height = self.mountain_height * self.scale
             snow = False
@@ -351,21 +381,21 @@ class Map_maker(app.App):
             obj = map_obj.Mountain(pos, width, height,
                                    rock_color, snow, snow_color)
         elif obj_type == "Hill":
-            hill_color = copy.copy(self.hill_color)
+            hill_color = list(self.hill_color)
             width = self.hill_width * self.scale
             height = self.hill_height * self.scale
             if alpha:
                 hill_color[alpha_index] = alpha_value
             obj = map_obj.Hill(pos, width, height, hill_color)
         elif obj_type == "Lake":
-            lake_color = copy.copy(self.lake_water_color)
+            lake_color = list(self.lake_water_color)
             if alpha:
                 lake_color[alpha_index] = alpha_value
             obj = map_obj.Lake(pos, 30, 30, lake_color)
         elif obj_type == "House":
-            wall_color = copy.copy(self.house_wall_color)
-            door_color = copy.copy(self.house_door_color)
-            roof_color = copy.copy(self.house_roof_color)
+            wall_color = list(self.house_wall_color)
+            door_color = list(self.house_door_color)
+            roof_color = list(self.house_roof_color)
             width = self.house_width * self.scale
             height = self.house_height * self.scale
             if alpha:
@@ -375,15 +405,37 @@ class Map_maker(app.App):
             obj = map_obj.House(pos, width, height, wall_color, door_color, roof_color)
         return obj
 
-    def generate_random_map(self):
+    def generate_random_map(self, dt = None):
         #Sets a voronoi diagram of seeds up (behind-the-scenes).
-        self.voronoi_setup()
+        if dt == None:
+            self.voronoi_setup()
 
         #Solves the diagram of seeds using Fortune's Algorithm (see voronoi.py).
-        self.voronoi.solve()
+        if self.show_generation and dt == None:
+            #Call this function every clock tick to iterate to next stage in
+            #voronoi solving.
+            self.clock.schedule(self.generate_random_map)
+        elif self.show_generation:
+            points = self.voronoi.solve_visually()
+            if points == None: #border generation is done
+                self.clock.unschedule(self.generate_random_map)
+                self.populate_voronoi()
+            else:
+                if self.voronoi_gen_borders != None:
+                    self.voronoi_gen_borders.delete()
+                num_points = len(points) // 2
+                vertices = ("v2f", points)
+                vertices_colors = ("c4B", 
+                                   self.voronoi_gen_borders_color * num_points)
 
-        #Adds map objects to the diagram randomly.
-        self.populate_voronoi()
+                self.voronoi_gen_borders = self.layer.batch.add(
+                                   num_points, pyglet.gl.GL_LINES, None,
+                                   vertices, vertices_colors)
+        else:
+            self.voronoi.solve()
+
+            #Adds map objects to the diagram randomly.
+            self.populate_voronoi()
 
     def populate_voronoi(self):
         for seed in self.voronoi.seeds:
@@ -455,6 +507,6 @@ class Map_maker(app.App):
             if not self.gui.hovered:
                 self.cursor.toggle_visibility(False)
 
-map_maker = Map_maker(1280, 720)
+map_maker = Map_maker(1500, 780)
 map_maker.set_caption("Map Maker")
 pyglet.app.run()
