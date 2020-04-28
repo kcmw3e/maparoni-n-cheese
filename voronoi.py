@@ -145,7 +145,7 @@ class Voronoi_seed(object):
                     self.intersections[seed] = [None, None]
                 for (i, intersection) in enumerate(intersections):
                     if self.parent.valid_intersection(intersection):
-                            self.intersections[seed][i] = intersection
+                        self.intersections[seed][i] = intersection
 
     def poll_points(self):
         points = list()

@@ -83,6 +83,13 @@ class Map_obj(object):
         self.parent_batch = parent_batch
         old_parent_batch.migrate(self.vertex_list, GL_TRIANGLES, None, self.parent_batch)
 
+    def get_save_string(self):
+        save_string = repr(self)
+        return save_string
+
+    def __repr__(self):
+        pass
+
 class Tree(Map_obj):
     def __init__(self, pos, width, height, 
                  leaf_color, trunk_color,
@@ -115,6 +122,12 @@ class Tree(Map_obj):
         y = self.pos[1] + trunk_height / 2
         r = shapes.Rect((x, y), trunk_width, trunk_height)
         self.trunk = Component(r, self.trunk_color)
+    
+    def __repr__(self):
+        string = f"Tree({self.pos}; {self.width}; {self.height}; "
+        string += f"{self.leaf_color}; {self.trunk_color}; "
+        string += f"{self.number_of_leaves})"
+        return string
 
 class Mountain(Map_obj):
     def __init__(self, pos, width, height,
@@ -143,6 +156,12 @@ class Mountain(Map_obj):
         t = shapes.Iso_triangle(self.pos, snow_width, snow_height, offset)
         self.snow = Component(t, self.snow_color, False)
 
+    def __repr__(self):
+        string = f"Mountain({self.pos}; {self.width}; {self.height}; "
+        string += f"{self.rock_color}; {self.has_snow}; "
+        string += f"{self.snow_color})"
+        return string
+
 class Hill(Map_obj):
     def __init__(self, pos, width, height, hill_color):
         self.hill_color = hill_color
@@ -152,6 +171,11 @@ class Hill(Map_obj):
         shape = shapes.Circle(self.pos, self.height, 5, angle = math.pi)
         c = Component(shape, self.hill_color)
         self.components.append(c)
+
+    def __repr__(self):
+        string = f"Hill({self.pos}; {self.width}; {self.height}; "
+        string += f"{self.hill_color})"
+        return string
 
 class Lake(Map_obj):
     def __init__(self, pos, width, height, water_color):
@@ -200,6 +224,12 @@ class House(Map_obj):
         tri = shapes.Iso_triangle(self.pos, self.width, height, offset)
         roof = Component(tri, self.roof_color)
         self.components.append(roof)
+
+    def __repr__(self):
+        string = f"House({self.pos}; {self.width}; {self.height}; "
+        string += f"{self.wall_color}; {self.door_color}; "
+        string += f"{self.roof_color})"
+        return string
 
 class Component(object):
     def __init__(self, shape, color, for_collision = True):

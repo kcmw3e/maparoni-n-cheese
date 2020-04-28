@@ -14,6 +14,7 @@ import gui
 import cursor
 import voronoi
 import map_obj
+import fileio
 
 class Map_maker(app.App):
     def __init__(self, width, height):
@@ -152,7 +153,9 @@ class Map_maker(app.App):
                                      self.generate_random_map,
                                      self.clear_map,
                                      self.change_cursor_type,
-                                     self.toggle_grid]
+                                     self.toggle_grid,
+                                     self.get_save_string,
+                                     self.load_from_string]
 
         # The arguments to be called in the ^^above^^ functions
         # (empty list implies no arguments).
@@ -189,6 +192,10 @@ class Map_maker(app.App):
               (self.cursor.get_pos, True),
               "Select" ],
             
+            [ ],
+
+            [ ],
+
             [ ]
         ]
 
@@ -202,9 +209,13 @@ class Map_maker(app.App):
                                   "Random Map",
                                   "Clear Map",
                                   "Select",
-                                  "Toggle Grid"]
+                                  "Toggle Grid",
+                                  "Save",
+                                  "Load"]
         
         self.gui_button_label_colors = [ [255, 255, 255, 255],
+                                         [255, 255, 255, 255],
+                                         [255, 255, 255, 255],
                                          [255, 255, 255, 255],
                                          [255, 255, 255, 255],
                                          [255, 255, 255, 255],
@@ -225,6 +236,8 @@ class Map_maker(app.App):
                                          [ 50, 112, 255, 255],
                                          [ 70,  70,  70, 255],
                                          [ 50, 112, 255, 255],
+                                         [ 50, 112, 255, 255],
+                                         [ 50, 112, 255, 255],
                                          [ 50, 112, 255, 255] ]
 
         # Color displayed WHEN hovered.
@@ -236,6 +249,8 @@ class Map_maker(app.App):
                                          [ 90, 40, 200, 255],
                                          [200, 70, 200, 255],
                                          [200, 70,  70, 255],
+                                         [ 90, 40, 200, 255],
+                                         [ 90, 40, 200, 255],
                                          [ 90, 40, 200, 255],
                                          [ 90, 40, 200, 255] ]
 
@@ -263,6 +278,7 @@ class Map_maker(app.App):
         #a diagram may fail to be created.
         self.voronoi_seeds_number = 10
         self.voronoi_seeds_padding = 80
+        self.voronoi_population_attempt = 0
         self.voronoi_population_attempts = 300 #(see populate_seed for use)
         self.voronoi = voronoi.Voronoi(self.width, self.layer_height,
                                        self.voronoi_seeds_number, 
@@ -419,7 +435,7 @@ class Map_maker(app.App):
             points = self.voronoi.solve_visually()
             if points == None: #border generation is done
                 self.clock.unschedule(self.generate_random_map)
-                self.populate_voronoi()
+                self.visual_populate_voronoi()
             else:
                 if self.voronoi_gen_borders != None:
                     self.voronoi_gen_borders.delete()
@@ -437,28 +453,55 @@ class Map_maker(app.App):
             #Adds map objects to the diagram randomly.
             self.populate_voronoi()
 
-    def populate_voronoi(self):
-        for seed in self.voronoi.seeds:
+    def visual_populate_voronoi(self, dt = None):
+        if dt == None:
+            self.clock.schedule(self.visual_populate_voronoi)
+            for seed in self.voronoi.seeds:
             #Each seed in a voronoi diagram has a polygonal shape around it.
-            polygon = seed.get_polygon()
-            seed.polygon = polygon
+                polygon = seed.get_polygon()
+                seed.polygon = polygon
 
-            #Choose a set of objects to fill with. (defined in obj_setup)
-            seed.map_obj_set = random.choice(self.voronoi_object_sets)
-            self.populate_seed(seed)
+                #Choose a set of objects to fill with. (defined in obj_setup)
+                seed.map_obj_set = random.choice(self.voronoi_object_sets)
+        elif self.voronoi_population_attempt > self.voronoi_population_attempts:
+            self.clock.unschedule(self.visual_populate_voronoi)
+            self.voronoi_population_attempt = 0
+        else:
+            for seed in self.voronoi.seeds:
+                self.populate_seed(seed)
+            self.voronoi_population_attempt += 1
+
+    def populate_voronoi(self, dt = None):
+            for seed in self.voronoi.seeds:
+                #Each seed in a voronoi diagram has a polygonal shape around it.
+                polygon = seed.get_polygon()
+                seed.polygon = polygon
+
+                #Choose a set of objects to fill with. (defined in obj_setup)
+                seed.map_obj_set = random.choice(self.voronoi_object_sets)
+                self.populate_seed(seed)
 
     def populate_seed(self, seed):
-        #Get a bounding rectangle of mins and maxs to try coordinates inside.
-        (min_x, max_x, min_y, max_y) = seed.polygon.get_maxs_mins()
-
-        #Try so many placements of random coordinates.
-        for _ in range(self.voronoi_population_attempts):
+        if self.show_generation:
+            (min_x, max_x, min_y, max_y) = seed.polygon.get_maxs_mins()
             obj_type = random.choice(seed.map_obj_set) #pick an object from set
             x = random.randrange(int(min_x), int(max_x) + 1) #+1 in case euqal
             y = random.randrange(int(min_y), int(max_y) + 1) #+1 in case euqal
             pos = (x, y)
             if seed.polygon.contains_point(pos):
                 self.add_map_obj(pos, *obj_type) #*obj in case obj has a subtype
+        else:
+            #Get a bounding rectangle of mins and maxs to try coordinates inside.
+            (min_x, max_x, min_y, max_y) = seed.polygon.get_maxs_mins()
+
+            #Try so many placements of random coordinates.
+            for _ in range(self.voronoi_population_attempts):
+                obj_type = random.choice(seed.map_obj_set) #pick an object from set
+                x = random.randrange(int(min_x), int(max_x) + 1) #+1 in case euqal
+                y = random.randrange(int(min_y), int(max_y) + 1) #+1 in case euqal
+                pos = (x, y)
+                if seed.polygon.contains_point(pos):
+                    self.add_map_obj(pos, *obj_type) #*obj in case obj has a subtype
 
     def select_obj(self, pos, from_cursor = False):
         if from_cursor:
@@ -506,6 +549,63 @@ class Map_maker(app.App):
             self.cursor.toggle_call_default(False)
             if not self.gui.hovered:
                 self.cursor.toggle_visibility(False)
+    
+    def get_save_string(self):
+        save_string = str()
+        seen_objs = set()
+        for region in self.layer.regions:
+            for obj in region.objects:
+                if obj not in seen_objs:
+                    string = obj.get_save_string()
+                    save_string += "\n" + string
+                seen_objs.add(obj)
+        fileio.save_file_string(save_string)
+
+    def load_from_string(self):
+        self.clear_map()
+        string = fileio.open_file_string()
+        objects = list()
+        for line in string.splitlines():
+            line = line.strip()
+            if line == "":
+                continue
+            for (i, c) in enumerate(line):
+                if c == "(":
+                    obj_type = line[:i]
+                    line = line[i + 1:-1]
+                    break
+            args = list()
+            for arg in line.split(";"):
+                arg = arg.strip()
+                if arg[0] == "(" and arg[-1] == ")":
+                    arg = arg[1:-1]
+                    sub_args = arg.split(",")
+                    arg = tuple(map(int, sub_args))
+                elif arg[0] == "[" and arg[-1] == "]":
+                    arg = arg[1:-1]
+                    sub_args = arg.split(",")
+                    arg = list(map(int, sub_args))
+                elif "." in arg:
+                    if arg.replace(".", "").isdigit():
+                        arg = float(arg)
+                elif arg.isdigit():
+                    arg = int(arg)
+                elif arg == "True" or arg == "False":
+                    arg = bool(arg)
+                elif arg == "None":
+                    arg = None
+                args.append(arg)
+            if obj_type == "Tree":
+                objects.append(map_obj.Tree(*args))
+            elif obj_type == "Mountain":
+                objects.append(map_obj.Mountain(*args))
+            elif obj_type == "House":
+                objects.append(map_obj.House(*args))
+            elif obj_type == "Hill":
+                objects.append(map_obj.Hill(*args))
+        for obj in objects:
+            self.layer.add_if_not_intersecting(obj)
+            obj.place(self.layer.batch)
 
 map_maker = Map_maker(1500, 780)
 map_maker.set_caption("Map Maker")
