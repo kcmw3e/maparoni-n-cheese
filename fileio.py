@@ -1,3 +1,6 @@
+#From:
+#https://stackoverflow.com/questions/9319317/quick-and-easy-file-dialog-in-python
+
 import tkinter as tk
 from tkinter import filedialog
 

@@ -38,7 +38,7 @@ import voronoi
 #      if they aren't .txt files.
 
 class Map_maker(app.App):
-    def __init__(self, width = 1800, height = 950):
+    def __init__(self, width = 1200, height = 700):
         super().__init__(width, height)
         self.setup()
 
@@ -674,10 +674,11 @@ class Map_maker(app.App):
 
         if self.cursor.selected == None: #cursor hasn't selected anything
             obj = self.layer.get_obj_at_pos(pos)
-            self.layer.remove_obj(obj)
-            obj.migrate(self.cursor.batch)
-            self.cursor.selected = obj
-            obj.change_visibility(self.cursor_selection_visibility)
+            if obj != None:
+                self.layer.remove_obj(obj)
+                obj.migrate(self.cursor.batch)
+                self.cursor.selected = obj
+                obj.change_visibility(self.cursor_selection_visibility)
 
         elif (not self.cursor.dragged and #not dragged means place the held obj
               self.layer.add_if_not_intersecting(self.cursor.selected)):
