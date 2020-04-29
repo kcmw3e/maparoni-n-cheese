@@ -18,8 +18,10 @@ class Layer(object):
         self.shape = shapes.Rect((self.width / 2, self.height / 2), self.width, self.height)
         self.num_points = len(self.shape.triangular_points) // 2
         self.background_vertices = ("v2f", self.shape.triangular_points)
-        self.background_vertices_colors = (f"c{len(self.color)}B", self.color * self.num_points)
-        self.background = self.batch.add(self.num_points, GL_TRIANGLES, None, self.background_vertices, self.background_vertices_colors)
+        self.background_vertices_colors = (f"c4B", self.color * self.num_points)
+        self.background = self.batch.add(self.num_points, GL_TRIANGLES, None, 
+                                         self.background_vertices, 
+                                         self.background_vertices_colors)
 
     def generate_regions(self):
         self.regions = list()
@@ -83,16 +85,18 @@ class Layer(object):
         for region in self.regions:
             region.change_visibility(visibility)
 
-
 class Region(object):
     def __init__(self, pos, width, height, parent):
         self.pos = pos
         self.width = width
         self.height = height
         self.objects = set()
+        self.border_color = [100, 100, 100, 0]
         self.shape = shapes.Rect(self.pos, self.width, self.height)
         self.num_points = len(self.shape.lines_points) // 2
-        self.vertex_list = parent.batch.add(self.num_points, pyglet.gl.GL_LINES, None, ("v2f", self.shape.lines_points), ("c4B", [100, 100, 100, 0] * self.num_points))
+        self.vertex_list = parent.batch.add(self.num_points, pyglet.gl.GL_LINES,
+                             None, ("v2f", self.shape.lines_points), 
+                             ("c4B", self.border_color * self.num_points))
 
     def __repr__(self):
         return f"Region ({self.width, self.height}) at {self.pos}"

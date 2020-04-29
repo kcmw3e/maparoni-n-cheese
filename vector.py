@@ -66,7 +66,8 @@ class Vector(object):
         if isinstance(other, Vector):
             if self.line.intersects(other.line):
                 intersection = self.line.intersection(other.line)
-                if self.point_in_domain_and_range(intersection) and other.point_in_domain_and_range(intersection):
+                if (self.point_in_domain_and_range(intersection)
+                    and other.point_in_domain_and_range(intersection)):
                     return True
         elif isinstance(other, Line):
             if self.line.intersects(other):

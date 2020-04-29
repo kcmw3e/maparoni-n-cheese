@@ -1,4 +1,11 @@
-#From:
+################################################################################
+#
+#   fileio.py
+#   Code by: Casey Walker
+#
+################################################################################
+
+#Adapted from:
 #https://stackoverflow.com/questions/9319317/quick-and-easy-file-dialog-in-python
 
 import tkinter as tk

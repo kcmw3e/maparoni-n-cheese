@@ -26,7 +26,8 @@ class Map_obj(object):
             points.extend(component_points)
             colors.extend(component_colors)
         num_points = len(points) // 2
-        self.vertex_list = self.parent_batch.add(num_points, GL_TRIANGLES, None, ("v2f", points), ("c4B", colors))
+        self.vertex_list = self.parent_batch.add(num_points, GL_TRIANGLES, None,
+                                                ("v2f", points), ("c4B", colors))
 
     def delete(self):
         self.vertex_list.delete()
