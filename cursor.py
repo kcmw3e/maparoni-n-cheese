@@ -26,6 +26,8 @@ class Cursor(object):
             self.call_default = set_to
         else:
             self.call_default = not self.call_default
+        if self.call_default:
+            self.type = self.default_type
 
     def toggle_visibility(self, set_to = None):
         if set_to != None:
@@ -49,7 +51,15 @@ class Cursor(object):
         self.pos = (x + dx, y + dy)
         if self.selected != None:
             self.selected.move(dx, dy)
+        if self.img != None:
+            self.img.move(dx, dy)
+    
+    def move_to(self, x, y):
+        dx = x - self.pos[0]
+        dy = y - self.pos[1]
+        self.move(dx, dy)
 
-    def set_default(self, function, args):
+    def set_default(self, function, args, tp):
         self.default_function = function
         self.default_args = args
+        self.default_type = tp

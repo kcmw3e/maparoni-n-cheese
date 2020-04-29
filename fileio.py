@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
 
-
 def open_file_string():
     root = tk.Tk()
     root.withdraw()

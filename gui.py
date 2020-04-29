@@ -6,7 +6,8 @@ class GUI(object):
     def __init__(self, pos, width, height, background_color,
                  button_width, button_height, button_padding,
                  button_colors, button_hover_colors,
-                 button_label_colors, button_labels, font_size, font,
+                 button_label_colors, button_label_hover_colors,
+                 button_labels, font_size, font,
                  button_functions, button_args):
 
         self.pos = pos
@@ -23,6 +24,7 @@ class GUI(object):
         self.button_args = button_args
         self.button_labels = button_labels
         self.button_label_colors = button_label_colors
+        self.button_label_hover_colors = button_label_hover_colors
         self.button_height = button_height
         self.button_width = button_width
         self.button_padding = button_padding
@@ -53,6 +55,7 @@ class GUI(object):
             color = self.button_colors[i]
             label_color = self.button_label_colors[i]
             hover_color = self.button_hover_colors[i]
+            label_hover_color = self.button_label_hover_colors[i]
 
             x = (i * (self.button_width     + self.button_padding) +
                       self.button_width / 2 + self.button_padding)
@@ -61,7 +64,7 @@ class GUI(object):
 
             b = Button(function, args, pos, label,
                        self.button_width, self.button_height,
-                       color, self.button_border_color, hover_color)
+                       color, self.button_border_color, hover_color, label_color, label_hover_color)
 
             self.buttons.append(b)
 
@@ -77,7 +80,7 @@ class GUI(object):
                                         font_size = self.font_size,
                                         x = b.pos[0], y = b.pos[1],
                                         anchor_x = 'center', anchor_y = 'center',
-                                        batch = self.batch_labels, color = label_color)
+                                        batch = self.batch_labels, color = b.label_color)
 
     def check_hovered(self, cursor_pos):
         if self.background_shape.contains_point(cursor_pos):
@@ -104,7 +107,7 @@ class GUI(object):
 
 class Button(object):
     def __init__(self, function, args, pos, label_name, width, height,
-                 color, border_color, hover_color):
+                 color, border_color, hover_color, label_color, label_hover_color):
         self.function = function
         self.args = args
         self.label_name = label_name
@@ -114,6 +117,8 @@ class Button(object):
         self.color = color
         self.border_color = border_color
         self.hover_color = hover_color
+        self.label_color = label_color
+        self.label_hover_color = label_hover_color
         self.shape = shapes.Rect(self.pos, self.width, self.height)
 
         self.num_points = len(self.shape.triangular_points) // 2
@@ -140,6 +145,8 @@ class Button(object):
 
     def hovered(self):
         self.vertex_list.colors = self.hover_color * self.num_points
+        self.label.color = self.label_hover_color
 
     def unhovered(self):
         self.vertex_list.colors = self.color * self.num_points
+        self.label.color = self.label_color

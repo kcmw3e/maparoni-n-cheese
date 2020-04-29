@@ -109,10 +109,14 @@ class Tree(Map_obj):
         self.leaves = list()
         leaf_height = self.height*.9
         for i in range(self.number_of_leaves):
+            if i == 0:
+                for_collision = True
+            else:
+                for_collision = False
             leaf_height = leaf_height * (1 - .1 * i)
             offset = (0, self.height - leaf_height / 2)
             t = shapes.Iso_triangle(self.pos, self.width, leaf_height, offset)
-            l = Component(t, self.leaf_color)
+            l = Component(t, self.leaf_color, for_collision)
             self.leaves.append(l)
 
     def make_trunk(self):
@@ -121,7 +125,7 @@ class Tree(Map_obj):
         x = self.pos[0]
         y = self.pos[1] + trunk_height / 2
         r = shapes.Rect((x, y), trunk_width, trunk_height)
-        self.trunk = Component(r, self.trunk_color)
+        self.trunk = Component(r, self.trunk_color, False)
     
     def __repr__(self):
         string = f"Tree({self.pos}; {self.width}; {self.height}; "
@@ -188,6 +192,11 @@ class Lake(Map_obj):
         shape = shapes.Simple_polygon(self.pos, angles, widths, radians = False)
         component = Component(shape, self.water_color)
         self.components.append(component)
+
+    def __repr__(self):
+        string = f"Lake({self.pos}; {self.width}; {self.height}; "
+        string += f"{self.water_color})"
+        return string
 
 class House(Map_obj):
     def __init__(self, pos, width, height,
