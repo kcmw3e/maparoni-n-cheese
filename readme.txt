@@ -16,3 +16,5 @@ Notable shortcuts are:
 - s --> switch between visualizing the random map generation (looks really cool when it's enabled) and just going for it quick as ya can (less recommended because it doesn't look cool, but is probably more efficient/less recourse intesive)
 - delete --> IF a map object is selected, delete will delete it.
 - escape --> quickly switch back to the select tool instead of having to move that pesky mouse to the gui and back <>{
+
+# See github repo at [https://github.com/kcmw3e/maparoni-n-cheese]
