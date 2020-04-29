@@ -167,12 +167,13 @@ class Mountain(Map_obj):
         return string
 
 class Hill(Map_obj):
-    def __init__(self, pos, width, height, hill_color):
+    def __init__(self, pos, radius, hill_color):
         self.hill_color = hill_color
-        super().__init__(pos, width, height)
+        self.radius = radius
+        super().__init__(pos, radius, radius)
 
     def make_components(self):
-        shape = shapes.Circle(self.pos, self.height, 5, angle = math.pi)
+        shape = shapes.Circle(self.pos, self.radius, 5, angle = math.pi)
         c = Component(shape, self.hill_color)
         self.components.append(c)
 
@@ -182,14 +183,13 @@ class Hill(Map_obj):
         return string
 
 class Lake(Map_obj):
-    def __init__(self, pos, width, height, water_color):
+    def __init__(self, pos, radius, water_color):
         self.water_color = water_color
-        super().__init__(pos, width, height)
+        self.radius = radius
+        super().__init__(pos, radius, radius)
 
     def make_components(self):
-        angles = [0, 45, 90, 100, 180, 270, 300]
-        widths = [20] * len(angles)
-        shape = shapes.Simple_polygon(self.pos, angles, widths, radians = False)
+        shape = shapes.Circle(self.pos, self.radius, 10)
         component = Component(shape, self.water_color)
         self.components.append(component)
 

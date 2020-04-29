@@ -1,23 +1,44 @@
 ################################################################################
 #
-#   mapmaker.py
+#   maparoni-n-cheese.py
 #   Code by: Casey Walker
 #
 ################################################################################
 
-import pyglet
-import app
-import layer
 import random
+
+import pyglet
 from pyglet.window import key
-import gui
+
+import app
 import cursor
-import voronoi
-import map_obj
 import fileio
+import gui
+import layer
+import map_obj
+import voronoi
+
+#Some notes before you run:
+#   1) Just about anything can be customized from the button order to the
+#      color of a map object to the size of an object. Feel free to experiment
+#      with it and change some thigns around.
+#   2) There are 3 keybinds to take note of
+#      (2 of which are the only way to use certain features)
+#       --  s  --> changes whether visual random map generation is a thing or not
+#       -- del --> deletes a selected item
+#       -- esc --> sets cursor to use select mode
+#   3) There's already a note about this, but be careful when changing
+#      the number of seeds and the seed padding for map generation. It can take
+#      a long time to compute seeds over 60 or so (depending on your machine)
+#   4) File io is basic and not fully tested, so ONLY SAVE/LOAD FILES YOU KNOW.
+#      In other words, if it's not a .txt file that you've saved directly from
+#      this program or that you've expressly written for this program, I highly
+#      recommend you don't touch it with this program. Similarly, don't try to
+#      load files that arent formatted/made for this program, ESPECIALLY
+#      if they aren't .txt files.
 
 class Map_maker(app.App):
-    def __init__(self, width, height):
+    def __init__(self, width = 1800, height = 950):
         super().__init__(width, height)
         self.setup()
 
@@ -69,7 +90,7 @@ class Map_maker(app.App):
         self.oak_tree_leaf_color =  [45, 112, 3, 255]
         self.oak_tree_trunk_color = [112, 52, 3, 255]
         self.oak_tree_leaves = 1
-        self.oak_tree_width = 20
+        self.oak_tree_width = 15
         self.oak_tree_height = 20
 
         self.spruce_tree_leaf_color =  [30, 85, 25, 255]
@@ -84,10 +105,10 @@ class Map_maker(app.App):
         self.mountain_height = 40
 
         self.hill_color = [15, 112, 26, 255]
-        self.hill_width = 5
-        self.hill_height = 5
+        self.hill_radius = 5
 
         self.lake_water_color = [0, 0, 112, 255]
+        self.lake_radius = 10
 
         self.house_wall_color = [200, 112, 70, 255]
         self.house_door_color = [112, 70, 40, 255]
@@ -98,7 +119,7 @@ class Map_maker(app.App):
         #If voronoi generation should be visible
         #(runs a little slower but looks really cool)
         #(see on_key_press for toggle)
-        self.show_generation = False
+        self.show_generation = True
         #======================================================================#
 
     def layer_setup(self):
@@ -595,13 +616,12 @@ class Map_maker(app.App):
         elif obj_type == "Hill":
             hill_color = list(self.hill_color)
 
-            width = self.hill_width * self.scale
-            height = self.hill_height * self.scale
+            radius = self.hill_radius * self.scale
 
             if alpha:
                 hill_color[alpha_index] = alpha_value
 
-            obj = map_obj.Hill(pos, width, height, hill_color)
+            obj = map_obj.Hill(pos, radius, hill_color)
         #----------------------------------------------------------------------#
 
         #Lake handling
@@ -609,10 +629,12 @@ class Map_maker(app.App):
         elif obj_type == "Lake":
             lake_color = list(self.lake_water_color)
 
+            radius = self.lake_radius * self.scale
+
             if alpha:
                 lake_color[alpha_index] = alpha_value
 
-            obj = map_obj.Lake(pos, 30, 30, lake_color)
+            obj = map_obj.Lake(pos, radius, lake_color)
         #----------------------------------------------------------------------#
 
         #House handling
@@ -802,6 +824,6 @@ class Map_maker(app.App):
             obj.place(self.layer.batch)
     ############################################################################
 
-map_maker = Map_maker(1800, 950)
+map_maker = Map_maker()
 map_maker.set_caption("Map Maker")
 pyglet.app.run()
