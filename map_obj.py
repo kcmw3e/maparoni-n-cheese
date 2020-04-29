@@ -178,8 +178,7 @@ class Hill(Map_obj):
         self.components.append(c)
 
     def __repr__(self):
-        string = f"Hill({self.pos}; {self.width}; {self.height}; "
-        string += f"{self.hill_color})"
+        string = f"Hill({self.pos}; {self.radius}; {self.hill_color})"
         return string
 
 class Lake(Map_obj):
@@ -194,8 +193,7 @@ class Lake(Map_obj):
         self.components.append(component)
 
     def __repr__(self):
-        string = f"Lake({self.pos}; {self.width}; {self.height}; "
-        string += f"{self.water_color})"
+        string = f"Lake({self.pos}; {self.radius}; {self.water_color})"
         return string
 
 class House(Map_obj):

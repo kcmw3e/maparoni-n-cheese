@@ -15,7 +15,7 @@ class App(pyglet.window.Window):
         config = pyglet.gl.Config(sample_buffers = 1, samples = 8,
                                   double_buffer = True)
 
-        super(App, self).__init__(config = config, resizable = False,
+        super(App, self).__init__(config = config, resizable = True,
                                   width = width, height = height)
 
         #from: 

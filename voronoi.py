@@ -31,10 +31,10 @@ import shapes
 #      created properly (i.e a corner is miised so there is a line where one 
 #      shouldnt be) due to the nature of this computation. Also, some edges of
 #      bordering seeds may not be EXACTLY lined up (but they're close). A "fix"
-#      for this is slowing down the increments (sweepline_step). This does "
+#      for this is slowing down the increments (sweepline_step). This does
 #      create a large efficiency problem and anything below .1 or so can be
 #      way too slow to be practical if enough seeds are put in
-#      (ex: 30 seeds, .1 step --> "
+#      (ex: 30 seeds, .1 step --> 4+ minutes)
 #   2) THIS IS IMPORTANT! The number of seeds used and the seed padding matters.
 #      If the number of seeds is too large, the computation of the diagram
 #      will take a very long time (somewhere around 70 takes a couple minutes)
@@ -54,7 +54,7 @@ class Voronoi(object):
         self.seed_padding = seed_padding
 
         self.sweepline_height = 0
-        self.sweepline_step = .1
+        self.sweepline_step = .5
         self.sweepline = shapes.Line((0, self.sweepline_height), 0)
 
         try:
@@ -86,9 +86,9 @@ class Voronoi(object):
 
             #Piacks random (x, y) point in the plane.
             x = random.randrange(self.seed_padding,
-                                 (self.width - self.seed_padding))
+                                 (int(self.width - self.seed_padding)))
             y = random.randrange(self.seed_padding,
-                                 (self.height - self.seed_padding))
+                                 (int(self.height - self.seed_padding)))
             point = (x, y)
 
 
@@ -172,7 +172,12 @@ class Voronoi(object):
                 seed.adjust(self.sweepline_height, self.seeds, self.borderlines)
 
     def valid_intersection(self, intersection):
-        #A valid intersection is one that is 
+        #A valid intersection is one that is NOT beneath a given parabola.
+        #If it is beneath a parabola, it is not at an edge because it is then
+        #closer to one of the seeds than the other. In other words, it falls
+        #INTO the region, not at the EDGE of the region. If this doesn't make
+        #sense, go watch the video above in super slow motion and really
+        #pay attention to the intersections.
         return (self.intersection_in_bounds(intersection) and
                 self.intersection_is_edge(intersection))
 
@@ -187,90 +192,148 @@ class Voronoi(object):
         for seed in self.seeds:
             if seed.active and seed.parabola > intersection:
                 valid = False
+                break
         return valid
 
 class Voronoi_seed(object):
     def __init__(self, pos, parent):
         self.pos = pos
         self.parent = parent
+
         self.active = False
         self.complete = False
+
         self.parabola = None
         self.intersections = dict()
         self.border_intersections = dict()
 
     def __lt__(self, sweepline):
+        #This is used for deciding if the seed is active or not
+        #(see parent.test_seeds)
         return self.pos[1] < sweepline.point[1]
 
+    #The following is for the logic of activation and adjustment. Activation
+    #simply means the seed is below the sweepline, so it initializes its
+    #parabola and borderline intersections. The adjustment simply looks through
+    #all parabola intersections and asks parent if they're legal and then adds
+    #the legal ones to its set of intersections.
+    #==========================================================================#
     def activate(self, sweepline_height, borderlines):
         self.active = True
         self.parabola = shapes.Parabola(sweepline_height, self.pos)
+
         for border in borderlines:
             line = borderlines[border]
             self.intersections[line] = [None, None]
 
     def adjust(self, sweepline_height, other_seeds, borderlines):
         self.parabola.directrix = sweepline_height
+
+        #Testing borders.
+        #----------------------------------------------------------------------#
         for border in borderlines:
-                line = borderlines[border]
-                intersections = self.parabola.intersections(line)
-                for (i, intersection) in enumerate(intersections):
-                    if self.parent.valid_intersection(intersection):
-                        self.intersections[line][i] = intersection
+            line = borderlines[border]
+
+            intersections = self.parabola.intersections(line)
+
+            for (i, intersection) in enumerate(intersections):
+                if self.parent.valid_intersection(intersection):
+                    self.intersections[line][i] = intersection
+        #----------------------------------------------------------------------#
+
+        #Testing other seeds.
+        #----------------------------------------------------------------------#
         for seed in other_seeds:
             if seed.active and seed != self:
                 intersections = self.parabola.intersections(seed.parabola)
+
                 if seed not in self.intersections:
                     self.intersections[seed] = [None, None]
+
                 for (i, intersection) in enumerate(intersections):
                     if self.parent.valid_intersection(intersection):
                         self.intersections[seed][i] = intersection
+        #----------------------------------------------------------------------#
+    #==========================================================================#
 
+    #Getting the points (intersections) below. One is for a list of tuple-points
+    #and the other is for a straight list of [x, y...] values.
+    #==========================================================================#
     def poll_points(self):
+        #Points will be a list of tuple-points:
+        #                                    [(x1, y1), (x2, y1), ..., (xn, yn)]
         points = list()
         for seed in self.intersections:
             for intersection in self.intersections[seed]:
                 if intersection != None:
                     points.append(intersection)
-        if len(points) == 0:
-            return []
+
+        if len(points) == 0: #no points :(
+            return [ ]
+
         else:
+            #Orders them by angle from 0 to 2*pi
             points = ordered(self.pos, points)
             return points
-    
+
     def poll_flattened_points(self):
+        #Unlike poll_points, list will be flattened:
+        #                                          [x1, y1, x2, y2, ..., xn, yn]
         points = self.poll_points()
-        if len(points) == 0:
+        if len(points) == 0: #no points again :(
             return [ ]
+
         else:
+            #This not only orders and flattens the points, it will wind them as
+            #well (it'll basically put every point in twice so that they can be
+            #drawn as line segments --> this is pretty much because of the way
+            #OpenGL/pyglet draws some things :p)
             (x1, y1) = points[0]
             ordered_flattened_points = [x1, y1]
+
             for point in points[1:]:
                 (x, y) = point
-                ordered_flattened_points.extend([x, y] * 2)
+                ordered_flattened_points.extend([x, y] * 2) #put it i twice <>{
+
+            #Put the first one in again to complete loop.
             ordered_flattened_points.extend([x1, y1])
             return ordered_flattened_points
+    #==========================================================================#
 
     def get_polygon(self):
         angles = list()
         widths = list()
+
         points = self.poll_points()
+
         (x1, y1) = self.pos
         for (x2, y2) in points:
             dx = x2 - x1
             dy = y2 - y1
+
+            #A vector is "drawn" from the seed's pos to the intersection point
+            #and the angle from 0*pi  and the length of the vector is taken
+            #for defining the polygon (see polygon.py)
             v = shapes.Vector(self.pos, (dx, dy))
             angle = v.angle
             width = v.magnitude
+
             angles.append(angle)
             widths.append(width)
+
         polygon = shapes.Simple_polygon(self.pos, angles, widths)
         return polygon
 
 def isnear(point1, point2, nearness):
+    #Tells if the 2 points are within the nearness distance.
     return shapes.Line.point_to_point(point1, point2) < nearness
 
 def ordered(pos, points):
+    #Takes a list of tuple-points [(x, y), ...]
+    #and returns an angle-ordered list
+    #(draws vectors to each point from pos and nabs the angle).
+    #Note that angles more than 2*pi will not appear because of the nature of
+    #how vector.angle is computed.
     ordered_points_dict = dict()
     angles = list()
     (x1, y1) = pos
@@ -278,11 +341,15 @@ def ordered(pos, points):
         (x2, y2) = point
         dx = x2 - x1
         dy = y2 - y1
+
         v = shapes.Vector(pos, (dx, dy))
         angle = v.angle
+
         ordered_points_dict[angle] = point
         angles.append(angle)
+
     ordered_points = list()
     for angle in sorted(angles):
         ordered_points.append(ordered_points_dict[angle])
+
     return ordered_points

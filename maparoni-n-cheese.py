@@ -24,7 +24,7 @@ import voronoi
 #      with it and change some thigns around.
 #   2) There are 3 keybinds to take note of
 #      (2 of which are the only way to use certain features)
-#       --  s  --> changes whether visual random map generation is a thing or not
+#       --  s  --> changes whether or not to visualize random map generation
 #       -- del --> deletes a selected item
 #       -- esc --> sets cursor to use select mode
 #   3) There's already a note about this, but be careful when changing
@@ -304,7 +304,7 @@ class Map_maker(app.App):
         self.gui_button_width = (((self.gui_width - self.gui_button_padding) / 
                                    self.gui_button_numbers) - 
                                    self.gui_button_padding)
-        self.gui_button_label_font_size = 12
+        self.gui_button_label_font_size = self.width / 140
         self.gui_button_label_font = "Arail"
         #======================================================================#
 
@@ -350,6 +350,10 @@ class Map_maker(app.App):
     #The following are pyglet event handlers and consist of the core logic for
     #the program. These are responsible for state changes and modifications
     #before drawing is done (on_draw is the last method in this section).
+    #Also a note about on_resize: it will erase the whole map, so be careful!
+    #Its main purpose is for scaling things to screen sizes, but it can be
+    #disabled in app.py, and window width/height can be manually adjusted
+    #in __init__
     ############################################################################
     def on_key_press(self, symbol, modifiers):
         if symbol == key.DELETE and self.cursor.type == "Select":
@@ -395,6 +399,10 @@ class Map_maker(app.App):
 
     def on_mouse_enter(self, x, y): #called when mouse enters the program window
         self.cursor.move_to(x, y)   #moves cursor in case it lost track
+
+    def on_resize(self, width, height):
+        super().on_resize(width, height)
+        self.setup()
 
     def on_draw(self):
         self.layer.draw()
